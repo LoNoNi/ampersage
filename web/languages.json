@@ -1,0 +1,36 @@
+{
+  "FR": {
+    "nav_home": "Accueil",
+    "nav_settings": "Paramètres",
+    "btn_save": "Sauvegarder",
+    "btn_init": "Initialiser",
+    "btn_search_history": "Rechercher historique",
+    "status_not_init": "Non initialisé",
+    "status_configured": "Configuré",
+    "status_active": "Actif",
+    "status_error": "Erreur",
+    "group_global": "Paramètres globaux",
+    "group_api_conso": "API Conso",
+    "group_tarif": "Tarif",
+    "group_voiture": "Voiture",
+    "placeholder_todo": "À configurer",
+    "error_api_conso_required": "L'API conso doit être active pour initialiser ce script"
+  },
+  "EN": {
+    "nav_home": "Home",
+    "nav_settings": "Settings",
+    "btn_save": "Save",
+    "btn_init": "Initialize",
+    "btn_search_history": "Search history",
+    "status_not_init": "Not initialized",
+    "status_configured": "Configured",
+    "status_active": "Active",
+    "status_error": "Error",
+    "group_global": "Global settings",
+    "group_api_conso": "API Conso",
+    "group_tarif": "Tariff",
+    "group_voiture": "Vehicle",
+    "placeholder_todo": "To be configured",
+    "error_api_conso_required": "API Conso must be active to initialize this script"
+  }
+}

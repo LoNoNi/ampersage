@@ -1,0 +1,86 @@
+{
+  "adresse": "https://api-couleur-tempo.fr/api",
+  "commentaire": "Script TRV option Tempo",
+  "puissance_souscrite": 6,
+  "tranches": [
+    {
+      "puissance": 6,
+      "extinction": false,
+      "abonnement": 15.59,
+      "bleu_hc": 13.25,
+      "bleu_hp": 16.12,
+      "blanc_hc": 14.99,
+      "blanc_hp": 18.71,
+      "rouge_hc": 15.75,
+      "rouge_hp": 70.6
+    },
+    {
+      "puissance": 9,
+      "extinction": false,
+      "abonnement": 19.38,
+      "bleu_hc": 13.25,
+      "bleu_hp": 16.12,
+      "blanc_hc": 14.99,
+      "blanc_hp": 18.71,
+      "rouge_hc": 15.75,
+      "rouge_hp": 70.6
+    },
+    {
+      "puissance": 12,
+      "extinction": false,
+      "abonnement": 23.07,
+      "bleu_hc": 13.25,
+      "bleu_hp": 16.12,
+      "blanc_hc": 14.99,
+      "blanc_hp": 18.71,
+      "rouge_hc": 15.75,
+      "rouge_hp": 70.6
+    },
+    {
+      "puissance": 15,
+      "extinction": false,
+      "abonnement": 26.47,
+      "bleu_hc": 13.25,
+      "bleu_hp": 16.12,
+      "blanc_hc": 14.99,
+      "blanc_hp": 18.71,
+      "rouge_hc": 15.75,
+      "rouge_hp": 70.6
+    },
+    {
+      "puissance": 18,
+      "extinction": false,
+      "abonnement": 30.04,
+      "bleu_hc": 13.25,
+      "bleu_hp": 16.12,
+      "blanc_hc": 14.99,
+      "blanc_hp": 18.71,
+      "rouge_hc": 15.75,
+      "rouge_hp": 70.6
+    },
+    {
+      "puissance": 30,
+      "extinction": false,
+      "abonnement": 44.73,
+      "bleu_hc": 13.25,
+      "bleu_hp": 16.12,
+      "blanc_hc": 14.99,
+      "blanc_hp": 18.71,
+      "rouge_hc": 15.75,
+      "rouge_hp": 70.6
+    },
+    {
+      "puissance": 36,
+      "extinction": false,
+      "abonnement": 52.42,
+      "bleu_hc": 13.25,
+      "bleu_hp": 16.12,
+      "blanc_hc": 14.99,
+      "blanc_hp": 18.71,
+      "rouge_hc": 15.75,
+      "rouge_hp": 70.6
+    }
+  ],
+  "plage_hc": "22h00→6h00",
+  "heure_changement_jour": "6h00"
+}

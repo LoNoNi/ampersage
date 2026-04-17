@@ -1,0 +1,17 @@
+[Unit]
+Description=Ampersage - Comparateur de factures électricité
+After=network.target
+
+[Service]
+Type=simple
+User=alex
+WorkingDirectory=/home/alex/ampersage
+ExecStart=/usr/bin/python3 /home/alex/ampersage/orchestrator.py
+Restart=on-failure
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=ampersage
+
+[Install]
+WantedBy=multi-user.target

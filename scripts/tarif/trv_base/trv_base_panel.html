@@ -1,0 +1,244 @@
+<style>
+  .trv-base-panel {
+    font-family: inherit;
+  }
+
+  .trv-base-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e8f0fe;
+  }
+
+  .trv-base-logo {
+    background: #FF6200;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 900;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .trv-base-brand-desc {
+    color: #888;
+    font-size: 0.85rem;
+  }
+
+  .trv-base-units {
+    font-size: 0.78rem;
+    color: #999;
+    margin-bottom: 0.75rem;
+  }
+
+  .trv-base-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  .trv-base-table th {
+    background: #f5f5f5;
+    color: #444;
+    font-weight: 700;
+    padding: 0.55rem 0.75rem;
+    text-align: left;
+    border-bottom: 2px solid #ddd;
+    white-space: nowrap;
+  }
+
+  .trv-base-table th .unit {
+    font-weight: 400;
+    color: #999;
+    font-size: 0.78rem;
+    margin-left: 0.3rem;
+  }
+
+  .trv-base-table td {
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+  }
+
+  .trv-base-table tr:hover td {
+    background: #fafafa;
+  }
+
+  .trv-base-table tr.extinction td {
+    color: #aaa;
+  }
+
+  .td-puissance {
+    font-weight: 700;
+    color: #333;
+    width: 110px;
+  }
+
+  .trv-base-table input[type="number"] {
+    width: 90px;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    text-align: right;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .trv-base-table input[type="number"]:focus {
+    border-color: #FF6200;
+    box-shadow: 0 0 0 2px rgba(255,98,0,0.15);
+  }
+
+  .toggle-extinction {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle-extinction input[type="checkbox"] {
+    display: none;
+  }
+
+  .toggle-track {
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+    background: #ccc;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: white;
+    top: 3px;
+    left: 3px;
+    transition: left 0.2s;
+  }
+
+  .toggle-extinction input:checked + .toggle-track {
+    background: #e07800;
+  }
+
+  .toggle-extinction input:checked + .toggle-track::after {
+    left: 19px;
+  }
+
+  .toggle-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #888;
+    min-width: 22px;
+  }
+
+  .toggle-extinction input:checked ~ .toggle-label {
+    color: #e07800;
+  }
+</style>
+
+<div class="trv-base-panel">
+
+  <div class="trv-base-brand">
+    <span class="trv-base-logo">EDF</span>
+    <span class="trv-base-brand-desc">Tarif Réglementé de Vente — Option Base</span>
+  </div>
+
+  <p class="trv-base-units">Abonnement en €/mois HT · Prix du kWh en c€/kWh HT</p>
+
+  <table class="trv-base-table" id="trv-base-table">
+    <thead>
+      <tr>
+        <th>Puissance souscrite <span class="unit">kVA</span></th>
+        <th>Abonnement <span class="unit">€/mois</span></th>
+        <th>Prix du kWh <span class="unit">c€/kWh</span></th>
+        <th>En extinction</th>
+      </tr>
+    </thead>
+    <tbody id="trv-base-tbody">
+      <!-- Rempli par le script -->
+    </tbody>
+  </table>
+
+</div>
+
+<script>
+(function () {
+  // Données par défaut (synchronisées avec trv_base.py)
+  var TRANCHES_DEFAUT = [
+    { puissance: 3,  abonnement: 12.03, prix_kwh: 19.40, extinction: false },
+    { puissance: 6,  abonnement: 15.65, prix_kwh: 19.40, extinction: false },
+    { puissance: 9,  abonnement: 19.56, prix_kwh: 19.27, extinction: true  },
+    { puissance: 12, abonnement: 23.32, prix_kwh: 19.27, extinction: true  },
+    { puissance: 15, abonnement: 26.84, prix_kwh: 19.27, extinction: true  },
+    { puissance: 18, abonnement: 30.49, prix_kwh: 19.27, extinction: true  },
+    { puissance: 24, abonnement: 38.24, prix_kwh: 19.27, extinction: true  },
+    { puissance: 30, abonnement: 45.37, prix_kwh: 19.27, extinction: true  },
+    { puissance: 36, abonnement: 52.54, prix_kwh: 19.27, extinction: true  },
+  ];
+
+  function construireTableau(tranches) {
+    var tbody = document.getElementById('trv-base-tbody');
+    tbody.innerHTML = '';
+    tranches.forEach(function (t) {
+      var tr = document.createElement('tr');
+      if (t.extinction) tr.classList.add('extinction');
+      tr.dataset.puissance = t.puissance;
+      tr.dataset.extinction = t.extinction;
+      var checked = t.extinction ? 'checked' : '';
+      tr.innerHTML =
+        '<td class="td-puissance">' + t.puissance + ' kVA</td>' +
+        '<td><input type="number" step="0.01" min="0" data-col="abonnement" value="' + t.abonnement.toFixed(2) + '" /></td>' +
+        '<td><input type="number" step="0.01" min="0" data-col="prix_kwh"   value="' + t.prix_kwh.toFixed(2)   + '" /></td>' +
+        '<td><label class="toggle-extinction">' +
+          '<input type="checkbox" data-col="extinction" ' + checked + ' />' +
+          '<span class="toggle-track"></span>' +
+          '<span class="toggle-label">' + (t.extinction ? 'Oui' : 'Non') + '</span>' +
+        '</label></td>';
+
+      // Mettre à jour le label et la classe de la ligne au clic
+      var checkbox = tr.querySelector('[data-col="extinction"]');
+      var label = tr.querySelector('.toggle-label');
+      checkbox.addEventListener('change', function () {
+        label.textContent = this.checked ? 'Oui' : 'Non';
+        tr.classList.toggle('extinction', this.checked);
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  // Collecteur : appelé par app.js pour récupérer les params avant sauvegarde
+  window.getParams_trv_base = function () {
+    var tranches = [];
+    document.querySelectorAll('#trv-base-tbody tr').forEach(function (tr) {
+      tranches.push({
+        puissance:  parseInt(tr.dataset.puissance),
+        abonnement: parseFloat(tr.querySelector('[data-col="abonnement"]').value),
+        prix_kwh:   parseFloat(tr.querySelector('[data-col="prix_kwh"]').value),
+        extinction: tr.querySelector('[data-col="extinction"]').checked,
+      });
+    });
+    return { tranches: tranches };
+  };
+
+  // Setter : appelé par app.js pour peupler le tableau depuis les params chargés
+  window.setParams_trv_base = function (data) {
+    var tranches = (data && data.tranches) ? data.tranches : TRANCHES_DEFAUT;
+    construireTableau(tranches);
+  };
+
+  // Initialisation avec les valeurs par défaut
+  construireTableau(TRANCHES_DEFAUT);
+})();
+</script>

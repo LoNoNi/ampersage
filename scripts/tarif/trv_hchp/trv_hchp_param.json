@@ -1,0 +1,16 @@
+{
+  "adresse": "https://mock.edf-trv-hchp.example.com/api",
+  "commentaire": "Script TRV option HC/HP mock",
+  "plage_hc": "22h00→6h00 + 12h00→14h00",
+  "tranches": [
+    {"puissance": 3,  "abonnement": 12.63, "prix_hp": 20.65, "prix_hc": 15.79, "extinction": false},
+    {"puissance": 6,  "abonnement": 16.73, "prix_hp": 20.65, "prix_hc": 15.79, "extinction": false},
+    {"puissance": 9,  "abonnement": 20.90, "prix_hp": 20.65, "prix_hc": 15.79, "extinction": false},
+    {"puissance": 12, "abonnement": 24.98, "prix_hp": 20.65, "prix_hc": 15.79, "extinction": false},
+    {"puissance": 15, "abonnement": 28.97, "prix_hp": 20.65, "prix_hc": 15.79, "extinction": false},
+    {"puissance": 18, "abonnement": 32.96, "prix_hp": 20.65, "prix_hc": 15.79, "extinction": false},
+    {"puissance": 24, "abonnement": 41.24, "prix_hp": 20.65, "prix_hc": 15.79, "extinction": false},
+    {"puissance": 30, "abonnement": 48.23, "prix_hp": 20.65, "prix_hc": 15.79, "extinction": false},
+    {"puissance": 36, "abonnement": 56.22, "prix_hp": 20.65, "prix_hc": 15.79, "extinction": false}
+  ]
+}

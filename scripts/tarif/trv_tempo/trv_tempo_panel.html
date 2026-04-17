@@ -1,0 +1,291 @@
+<style>
+  .trv-tempo-panel { font-family: inherit; }
+
+  .trv-tempo-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e8f0fe;
+  }
+
+  .trv-tempo-logo {
+    background: #FF6200;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 900;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+  }
+
+  .trv-tempo-badge {
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+  }
+  .badge-bleu  { background: #dbeafe; color: #1d4ed8; }
+  .badge-blanc { background: #f3f4f6; color: #374151; border: 1px solid #d1d5db; }
+  .badge-rouge { background: #fee2e2; color: #b91c1c; }
+
+  .trv-tempo-brand-desc { color: #888; font-size: 0.85rem; }
+
+  .trv-tempo-units { font-size: 0.78rem; color: #999; margin-bottom: 0.75rem; }
+
+  .trv-tempo-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  /* En-têtes de niveau 1 */
+  .trv-tempo-table th.th-group {
+    text-align: center;
+    font-weight: 700;
+    padding: 0.45rem 0.5rem;
+    border-bottom: 1px solid #ddd;
+    white-space: nowrap;
+  }
+  .trv-tempo-table th.th-group.col-puissance,
+  .trv-tempo-table th.th-group.col-abo,
+  .trv-tempo-table th.th-group.col-ext {
+    background: #f5f5f5;
+    color: #444;
+    vertical-align: bottom;
+    border-bottom: 2px solid #ddd;
+  }
+  .th-group.col-bleu  { background: #dbeafe; color: #1d4ed8; border-top: 3px solid #1d4ed8; }
+  .th-group.col-blanc { background: #f3f4f6; color: #374151; border-top: 3px solid #9ca3af; }
+  .th-group.col-rouge { background: #fee2e2; color: #b91c1c; border-top: 3px solid #b91c1c; }
+
+  /* En-têtes de niveau 2 (HC/HP) */
+  .trv-tempo-table th.th-sub {
+    text-align: center;
+    padding: 0.3rem 0.4rem;
+    border-bottom: 2px solid #ddd;
+    font-size: 0.78rem;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+  .th-sub.sub-bleu-hc  { background: #eff6ff; color: #1d4ed8; }
+  .th-sub.sub-bleu-hp  { background: #dbeafe; color: #1d4ed8; }
+  .th-sub.sub-blanc-hc { background: #f9fafb; color: #374151; }
+  .th-sub.sub-blanc-hp { background: #f3f4f6; color: #374151; }
+  .th-sub.sub-rouge-hc { background: #fff5f5; color: #b91c1c; }
+  .th-sub.sub-rouge-hp { background: #fee2e2; color: #b91c1c; }
+
+  .trv-tempo-table td {
+    padding: 0.35rem 0.4rem;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+    text-align: center;
+  }
+
+  .trv-tempo-table tr:hover td { background: #fafafa; }
+  .trv-tempo-table tr.extinction td { color: #aaa; }
+
+  .td-puissance { font-weight: 700; color: #333; text-align: left; white-space: nowrap; }
+
+  .trv-tempo-table input[type="number"] {
+    width: 72px;
+    padding: 0.28rem 0.4rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.82rem;
+    font-family: inherit;
+    text-align: right;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  input[data-col="bleu_hc"]:focus,
+  input[data-col="bleu_hp"]:focus  { border-color: #1d4ed8; box-shadow: 0 0 0 2px rgba(29,78,216,0.12); }
+  input[data-col="blanc_hc"]:focus,
+  input[data-col="blanc_hp"]:focus { border-color: #6b7280; box-shadow: 0 0 0 2px rgba(107,114,128,0.12); }
+  input[data-col="rouge_hc"]:focus,
+  input[data-col="rouge_hp"]:focus { border-color: #b91c1c; box-shadow: 0 0 0 2px rgba(185,28,28,0.12); }
+  input[data-col="abonnement"]:focus { border-color: #FF6200; box-shadow: 0 0 0 2px rgba(255,98,0,0.12); }
+
+  .toggle-extinction {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle-extinction input[type="checkbox"] { display: none; }
+  .toggle-track {
+    width: 34px; height: 18px; border-radius: 9px;
+    background: #ccc; position: relative; transition: background 0.2s; flex-shrink: 0;
+  }
+  .toggle-track::after {
+    content: ''; position: absolute;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: white; top: 3px; left: 3px; transition: left 0.2s;
+  }
+  .toggle-extinction input:checked + .toggle-track { background: #e07800; }
+  .toggle-extinction input:checked + .toggle-track::after { left: 17px; }
+  .toggle-label { font-size: 0.75rem; font-weight: 600; color: #888; min-width: 20px; }
+  .toggle-extinction input:checked ~ .toggle-label { color: #e07800; }
+
+  .trv-tempo-plage-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #eee;
+  }
+
+  .trv-tempo-plage-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #555;
+    white-space: nowrap;
+  }
+
+  .trv-tempo-plage-input {
+    flex: 1;
+    max-width: 220px;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .trv-tempo-plage-input:focus {
+    border-color: #1d4ed8;
+    box-shadow: 0 0 0 2px rgba(29,78,216,0.12);
+  }
+</style>
+
+<div class="trv-tempo-panel">
+
+  <div class="trv-tempo-brand">
+    <span class="trv-tempo-logo">EDF</span>
+    <span class="trv-tempo-badge badge-bleu">Bleu</span>
+    <span class="trv-tempo-badge badge-blanc">Blanc</span>
+    <span class="trv-tempo-badge badge-rouge">Rouge</span>
+    <span class="trv-tempo-brand-desc">Tarif Réglementé de Vente — Option Tempo</span>
+  </div>
+
+  <p class="trv-tempo-units">Abonnement en €/mois TTC · Prix du kWh en c€/kWh TTC</p>
+
+  <table class="trv-tempo-table" id="trv-tempo-table">
+    <thead>
+      <!-- Ligne 1 : groupes -->
+      <tr>
+        <th class="th-group col-puissance" rowspan="2">Puissance<br/><span style="font-weight:400;color:#999;font-size:0.75rem">kVA</span></th>
+        <th class="th-group col-abo"       rowspan="2">Abonnement<br/><span style="font-weight:400;color:#999;font-size:0.75rem">€/mois</span></th>
+        <th class="th-group col-bleu"  colspan="2">Jours Bleus</th>
+        <th class="th-group col-blanc" colspan="2">Jours Blancs</th>
+        <th class="th-group col-rouge" colspan="2">Jours Rouges</th>
+        <th class="th-group col-ext"   rowspan="2">En<br/>extinction</th>
+      </tr>
+      <!-- Ligne 2 : HC / HP par couleur -->
+      <tr>
+        <th class="th-sub sub-bleu-hc">HC</th>
+        <th class="th-sub sub-bleu-hp">HP</th>
+        <th class="th-sub sub-blanc-hc">HC</th>
+        <th class="th-sub sub-blanc-hp">HP</th>
+        <th class="th-sub sub-rouge-hc">HC</th>
+        <th class="th-sub sub-rouge-hp">HP</th>
+      </tr>
+    </thead>
+    <tbody id="trv-tempo-tbody"></tbody>
+  </table>
+
+  <div class="trv-tempo-plage-row">
+    <label class="trv-tempo-plage-label" for="trv-tempo-plage-hc">Plage heures creuses</label>
+    <input type="text" id="trv-tempo-plage-hc" class="trv-tempo-plage-input"
+           value="22h00→6h00" placeholder="ex: 22h00→6h00" />
+  </div>
+
+  <div class="trv-tempo-plage-row">
+    <label class="trv-tempo-plage-label" for="trv-tempo-changement-jour">Heure de changement de jour</label>
+    <input type="text" id="trv-tempo-changement-jour" class="trv-tempo-plage-input"
+           value="6h00" placeholder="ex: 6h00" />
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var TRANCHES_DEFAUT = [
+    { puissance: 6,  abonnement: 15.59, bleu_hc: 13.25, bleu_hp: 16.12, blanc_hc: 14.99, blanc_hp: 18.71, rouge_hc: 15.75, rouge_hp: 70.60, extinction: false },
+    { puissance: 9,  abonnement: 19.38, bleu_hc: 13.25, bleu_hp: 16.12, blanc_hc: 14.99, blanc_hp: 18.71, rouge_hc: 15.75, rouge_hp: 70.60, extinction: false },
+    { puissance: 12, abonnement: 23.07, bleu_hc: 13.25, bleu_hp: 16.12, blanc_hc: 14.99, blanc_hp: 18.71, rouge_hc: 15.75, rouge_hp: 70.60, extinction: false },
+    { puissance: 15, abonnement: 26.47, bleu_hc: 13.25, bleu_hp: 16.12, blanc_hc: 14.99, blanc_hp: 18.71, rouge_hc: 15.75, rouge_hp: 70.60, extinction: false },
+    { puissance: 18, abonnement: 30.04, bleu_hc: 13.25, bleu_hp: 16.12, blanc_hc: 14.99, blanc_hp: 18.71, rouge_hc: 15.75, rouge_hp: 70.60, extinction: false },
+    { puissance: 30, abonnement: 44.73, bleu_hc: 13.25, bleu_hp: 16.12, blanc_hc: 14.99, blanc_hp: 18.71, rouge_hc: 15.75, rouge_hp: 70.60, extinction: false },
+    { puissance: 36, abonnement: 52.42, bleu_hc: 13.25, bleu_hp: 16.12, blanc_hc: 14.99, blanc_hp: 18.71, rouge_hc: 15.75, rouge_hp: 70.60, extinction: false },
+  ];
+
+  var COLS = ['bleu_hc','bleu_hp','blanc_hc','blanc_hp','rouge_hc','rouge_hp'];
+
+  function construireTableau(tranches) {
+    var tbody = document.getElementById('trv-tempo-tbody');
+    tbody.innerHTML = '';
+    tranches.forEach(function (t) {
+      var tr = document.createElement('tr');
+      if (t.extinction) tr.classList.add('extinction');
+      tr.dataset.puissance = t.puissance;
+
+      var html = '<td class="td-puissance">' + t.puissance + ' kVA</td>';
+      html += '<td><input type="number" step="0.01" min="0" data-col="abonnement" value="' + t.abonnement.toFixed(2) + '" /></td>';
+      COLS.forEach(function (col) {
+        html += '<td><input type="number" step="0.01" min="0" data-col="' + col + '" value="' + t[col].toFixed(2) + '" /></td>';
+      });
+      var checked = t.extinction ? 'checked' : '';
+      html += '<td><label class="toggle-extinction">' +
+        '<input type="checkbox" data-col="extinction" ' + checked + ' />' +
+        '<span class="toggle-track"></span>' +
+        '<span class="toggle-label">' + (t.extinction ? 'Oui' : 'Non') + '</span>' +
+        '</label></td>';
+      tr.innerHTML = html;
+
+      var checkbox = tr.querySelector('[data-col="extinction"]');
+      var label    = tr.querySelector('.toggle-label');
+      checkbox.addEventListener('change', function () {
+        label.textContent = this.checked ? 'Oui' : 'Non';
+        tr.classList.toggle('extinction', this.checked);
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  window.getParams_trv_tempo = function () {
+    var tranches = [];
+    document.querySelectorAll('#trv-tempo-tbody tr').forEach(function (tr) {
+      var row = { puissance: parseInt(tr.dataset.puissance), extinction: tr.querySelector('[data-col="extinction"]').checked };
+      row.abonnement = parseFloat(tr.querySelector('[data-col="abonnement"]').value);
+      COLS.forEach(function (col) {
+        row[col] = parseFloat(tr.querySelector('[data-col="' + col + '"]').value);
+      });
+      tranches.push(row);
+    });
+    var plage_hc          = document.getElementById('trv-tempo-plage-hc');
+    var changement_jour   = document.getElementById('trv-tempo-changement-jour');
+    return {
+      tranches:              tranches,
+      plage_hc:              plage_hc        ? plage_hc.value        : '22h00→6h00',
+      heure_changement_jour: changement_jour ? changement_jour.value : '6h00',
+    };
+  };
+
+  window.setParams_trv_tempo = function (data) {
+    construireTableau((data && data.tranches) ? data.tranches : TRANCHES_DEFAUT);
+    var plage_hc        = document.getElementById('trv-tempo-plage-hc');
+    var changement_jour = document.getElementById('trv-tempo-changement-jour');
+    if (plage_hc        && data && data.plage_hc)              plage_hc.value        = data.plage_hc;
+    if (changement_jour && data && data.heure_changement_jour) changement_jour.value = data.heure_changement_jour;
+  };
+
+  construireTableau(TRANCHES_DEFAUT);
+})();
+</script>

@@ -1,0 +1,820 @@
+/* style.css - Feuille de style principale */
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: "Segoe UI", system-ui, sans-serif;
+  background: #f4f6f9;
+  color: #2c3e50;
+  min-height: 100vh;
+}
+
+/* ─── Navbar ─────────────────────────────────────────────────────────────── */
+
+.navbar {
+  display: flex;
+  align-items: center;
+  background: #1a73e8;
+  color: white;
+  padding: 0 1.5rem;
+  height: 56px;
+  gap: 1rem;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.nav-brand {
+  font-size: 1.1rem;
+  font-weight: 700;
+  flex: 1;
+}
+
+.nav-links {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.nav-btn {
+  background: transparent;
+  border: 2px solid transparent;
+  color: rgba(255,255,255,0.85);
+  padding: 0.4rem 1rem;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.95rem;
+  transition: all 0.2s;
+}
+
+.nav-btn:hover,
+.nav-btn.active {
+  background: rgba(255,255,255,0.2);
+  color: white;
+  border-color: rgba(255,255,255,0.5);
+}
+
+.nav-lang {
+  display: flex;
+  gap: 0.3rem;
+}
+
+.debug-toggle-btn {
+  background: transparent;
+  border: 2px solid rgba(255,255,255,0.4);
+  color: rgba(255,255,255,0.8);
+  padding: 0.25rem 0.8rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  margin-left: 0.5rem;
+  transition: all 0.2s;
+}
+
+.debug-toggle-btn:hover,
+.debug-toggle-btn.active {
+  background: rgba(255,255,255,0.15);
+  color: white;
+}
+
+.lang-btn {
+  background: transparent;
+  border: 2px solid rgba(255,255,255,0.5);
+  color: rgba(255,255,255,0.8);
+  padding: 0.25rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.lang-btn.active,
+.lang-btn:hover {
+  background: white;
+  color: #1a73e8;
+}
+
+/* ─── Barre de statuts ────────────────────────────────────────────────────── */
+
+.status-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  background: #fff;
+  padding: 0.6rem 1.5rem;
+  border-bottom: 1px solid #e0e0e0;
+  font-size: 0.85rem;
+}
+
+.status-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.status-label {
+  color: #666;
+  font-weight: 600;
+}
+
+.status-value {
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+  font-weight: 600;
+  background: #e0e0e0;
+  color: #555;
+}
+
+.status-value.ok,
+.status-value.actif {
+  background: #d4edda;
+  color: #155724;
+}
+
+.status-value.erreur {
+  background: #f8d7da;
+  color: #721c24;
+}
+
+.status-value.initialisation,
+.status-value.configuré {
+  background: #fff3cd;
+  color: #856404;
+}
+
+.script-status.disabled .status-value {
+  background: #e9ecef;
+  color: #adb5bd;
+}
+
+/* ─── Contenu ─────────────────────────────────────────────────────────────── */
+
+.content {
+  max-width: 1400px;
+  margin: 2rem auto;
+  padding: 0 1.5rem;
+}
+
+.page {
+  display: none;
+}
+
+.page.active {
+  display: block;
+}
+
+#main-content {
+  background: white;
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+  overflow-x: auto;
+}
+
+#main-content h1 {
+  font-size: 2rem;
+  color: #1a73e8;
+}
+
+/* ─── Tableau de consommation (accueil) ──────────────────────────────────── */
+
+.conso-table {
+  width: 100%;
+  min-width: 600px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+  white-space: nowrap;
+}
+
+.conso-table thead tr {
+  background: #1a73e8;
+  color: white;
+}
+
+.conso-titre {
+  padding: 0.6rem 1rem;
+  font-size: 1rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+.conso-th {
+  padding: 0.6rem 1rem;
+  font-weight: 600;
+  text-align: center;
+}
+
+.conso-annee {
+  background: #1a73e8;
+  color: white;
+  font-weight: 700;
+  padding: 0.4rem 0.75rem;
+  vertical-align: top;
+  text-align: center;
+  border-right: 2px solid #1558b0;
+  border-bottom: none;
+  white-space: nowrap;
+}
+
+.conso-mois {
+  background: #e8f0fe;
+  color: #1a73e8;
+  font-weight: 700;
+  padding: 0.4rem 0.75rem;
+  vertical-align: top;
+  text-align: center;
+  border-right: 2px solid #c5d8fb;
+  border-bottom: none;
+  white-space: nowrap;
+}
+
+.conso-semaine {
+  background: #f0f5ff;
+  color: #1558b0;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  vertical-align: top;
+  text-align: center;
+  border-right: 1px solid #d5e4ff;
+  border-bottom: none;
+  white-space: nowrap;
+}
+
+.conso-jour {
+  background: #f4f8ff;
+  color: #2c3e50;
+  font-weight: 600;
+  padding: 0.4rem 0.75rem;
+  vertical-align: top;
+  text-align: center;
+  border-right: 1px solid #e0e0e0;
+  border-bottom: none;
+  white-space: nowrap;
+}
+
+.conso-heure {
+  padding: 0.3rem 0.75rem;
+  color: #555;
+  border-bottom: 1px solid #f0f0f0;
+  white-space: nowrap;
+}
+
+.conso-kwh {
+  padding: 0.3rem 0.75rem;
+  text-align: right;
+  font-weight: 600;
+  color: #2c3e50;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.conso-pmax {
+  padding: 0.3rem 0.75rem;
+  text-align: right;
+  font-weight: 600;
+  color: #2c3e50;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.conso-pmax-pic {
+  color: #000;
+  background: #e07800;
+}
+
+.conso-table tbody tr:hover .conso-heure,
+.conso-table tbody tr:hover .conso-kwh,
+.conso-table tbody tr:hover .conso-pmax {
+  background: #f0f4ff;
+}
+
+/* ─── Lignes de sous-total ───────────────────────────────────────────────── */
+
+.conso-total-label {
+  text-align: left;
+  padding: 0.4rem 0.75rem;
+  font-weight: 700;
+}
+
+.conso-total-kwh,
+.conso-total-pmax,
+.conso-total-tarif {
+  text-align: right;
+  padding: 0.35rem 0.75rem;
+  font-weight: 600;
+}
+
+/* Jour */
+.conso-subtotal-jour td {
+  background: #f0f4ff;
+  color: #1a73e8;
+  font-size: 0.85rem;
+  border-top: 1px solid #c5d8fb;
+}
+
+/* Semaine */
+.conso-subtotal-semaine td {
+  background: #d6e4ff;
+  color: #1558b0;
+  border-top: 2px solid #a8c4f5;
+}
+
+/* Mois */
+.conso-subtotal-mois td {
+  background: #b3ccff;
+  color: #0d3d8c;
+  font-size: 0.9rem;
+  border-top: 2px solid #1a73e8;
+}
+
+/* Année */
+.conso-subtotal-annee td {
+  background: #1a73e8;
+  color: white;
+  font-size: 0.95rem;
+  border-top: 3px solid #0d3d8c;
+}
+
+/* ─── Groupes de paramètres ──────────────────────────────────────────────── */
+
+.param-group {
+  background: white;
+  border-radius: 10px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+
+.param-group h2 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #1a73e8;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e8f0fe;
+}
+
+.param-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.param-fields label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #555;
+}
+
+.param-fields input,
+.param-fields select {
+  padding: 0.45rem 0.75rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.param-fields input:focus,
+.param-fields select:focus {
+  border-color: #1a73e8;
+  box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+}
+
+.param-fields input.readonly {
+  background: #f5f5f5;
+  color: #777;
+  cursor: default;
+}
+
+.param-actions {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.btn-save,
+.btn-init,
+.btn-history {
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background 0.2s, opacity 0.2s;
+}
+
+.btn-save {
+  background: #1a73e8;
+  color: white;
+}
+
+.btn-save:hover {
+  background: #1558b0;
+}
+
+.btn-init {
+  background: #ff8c00;
+  color: white;
+}
+
+.btn-init:hover {
+  background: #e07800;
+}
+
+.btn-history {
+  background: #34a853;
+  color: white;
+}
+
+.btn-history:hover {
+  background: #2d8f46;
+}
+
+.param-status-msg {
+  margin-top: 0.75rem;
+  font-size: 0.85rem;
+  color: #d32f2f;
+  min-height: 1.2em;
+}
+
+.placeholder {
+  color: #999;
+  font-style: italic;
+}
+
+/* ─── Bandeaux d'état API ─────────────────────────────────────────────────── */
+
+.bandeau-info,
+.bandeau-erreur {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  padding: 0.75rem 1rem;
+  border-radius: 6px;
+  margin-bottom: 1rem;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.bandeau-info {
+  background: #e8f4fd;
+  border: 1px solid #90caf9;
+  color: #1565c0;
+}
+
+.bandeau-erreur {
+  background: #fdecea;
+  border: 1px solid #ef9a9a;
+  color: #b71c1c;
+}
+
+.bandeau-icone {
+  flex-shrink: 0;
+  font-style: normal;
+}
+
+/* ─── Disclaimer ─────────────────────────────────────────────────────────── */
+
+.disclaimer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+}
+
+.disclaimer-overlay.hidden {
+  display: none;
+}
+
+.disclaimer-modal {
+  background: #fff;
+  border-radius: 10px;
+  max-width: 560px;
+  width: 90%;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+}
+
+.disclaimer-titre {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #b71c1c;
+  margin: 0 0 1.2rem 0;
+}
+
+.disclaimer-corps p {
+  margin: 0 0 0.85rem 0;
+  font-size: 0.92rem;
+  line-height: 1.55;
+  color: #333;
+}
+
+.disclaimer-responsabilite {
+  background: #fff8e1;
+  border-left: 4px solid #f9a825;
+  padding: 0.6rem 0.9rem;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.88rem !important;
+  color: #555 !important;
+}
+
+.disclaimer-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: none;
+  border: none;
+  font-size: 1.1rem;
+  color: #aaa;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  transition: color 0.2s, background 0.2s;
+}
+
+.disclaimer-close:hover { color: #333; background: #f0f0f0; }
+
+.disclaimer-modal { position: relative; }
+
+.disclaimer-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1.4rem;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.disclaimer-btns {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.disclaimer-check-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: #666;
+  cursor: pointer;
+}
+
+.disclaimer-btn {
+  padding: 0.55rem 1.4rem;
+  background: #0070C0;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.disclaimer-btn:hover { background: #005fa3; }
+
+.disclaimer-btn-refuser {
+  background: #fff;
+  color: #555;
+  border: 1px solid #ccc;
+}
+
+.disclaimer-btn-refuser:hover { background: #f5f5f5; }
+
+/* ─── Panneau de débogage ─────────────────────────────────────────────────── */
+
+.debug-panel {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-height: 45vh;
+  background: #1e1e2e;
+  color: #cdd6f4;
+  font-family: "Consolas", "Fira Code", monospace;
+  font-size: 0.82rem;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 -4px 16px rgba(0,0,0,0.4);
+  border-top: 2px solid #313244;
+  transition: max-height 0.3s ease;
+}
+
+.debug-panel.hidden {
+  display: none;
+}
+
+.debug-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.4rem 1rem;
+  background: #181825;
+  border-bottom: 1px solid #313244;
+  flex-shrink: 0;
+}
+
+.debug-title {
+  font-weight: 700;
+  color: #cba6f7;
+  font-size: 0.9rem;
+}
+
+.debug-ts {
+  color: #6c7086;
+  font-size: 0.78rem;
+  flex: 1;
+}
+
+.debug-refresh,
+.debug-close {
+  background: transparent;
+  border: 1px solid #45475a;
+  color: #cdd6f4;
+  padding: 0.15rem 0.6rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.8rem;
+  transition: background 0.2s;
+}
+
+.debug-refresh:hover { background: #313244; }
+.debug-close:hover { background: #f38ba8; color: #1e1e2e; }
+
+.debug-body {
+  display: flex;
+  gap: 0;
+  overflow: hidden;
+  flex: 1;
+}
+
+.debug-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid #313244;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.debug-section:last-child {
+  border-right: none;
+}
+
+.debug-section-title {
+  padding: 0.35rem 0.75rem;
+  background: #181825;
+  color: #89b4fa;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid #313244;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.debug-badge {
+  background: #313244;
+  color: #a6e3a1;
+  padding: 0.05rem 0.4rem;
+  border-radius: 10px;
+  font-size: 0.72rem;
+}
+
+.debug-content {
+  overflow-y: auto;
+  padding: 0.5rem 0.75rem;
+  flex: 1;
+}
+
+/* Tableau Enedis */
+.debug-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8rem;
+}
+
+.debug-table th {
+  text-align: left;
+  color: #89b4fa;
+  padding: 0.2rem 0.5rem;
+  border-bottom: 1px solid #313244;
+  position: sticky;
+  top: 0;
+  background: #1e1e2e;
+}
+
+.debug-table td {
+  padding: 0.15rem 0.5rem;
+  border-bottom: 1px solid #2a2a3e;
+  color: #cdd6f4;
+}
+
+.debug-table tr:hover td {
+  background: #313244;
+}
+
+.td-kwh {
+  text-align: right;
+  color: #a6e3a1;
+  font-weight: 600;
+}
+
+.td-type-reel { color: #a6e3a1; }
+.td-type-estimation { color: #f9e2af; }
+
+/* Statuts et tarifs */
+.debug-kv {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.debug-kv-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: baseline;
+}
+
+.debug-key {
+  color: #89b4fa;
+  min-width: 120px;
+  flex-shrink: 0;
+}
+
+.debug-val {
+  color: #cdd6f4;
+}
+
+.debug-val.ok    { color: #a6e3a1; }
+.debug-val.err   { color: #f38ba8; }
+.debug-val.warn  { color: #f9e2af; }
+
+.debug-subsection {
+  color: #cba6f7;
+  font-weight: 700;
+  margin-top: 0.5rem;
+  margin-bottom: 0.2rem;
+}
+
+/* ─── Bouton de contraction ──────────────────────────────────────────────────── */
+
+.conso-toggle {
+  background: rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.18);
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.2rem 0.5rem;
+  color: inherit;
+  vertical-align: middle;
+  margin-right: 0.5rem;
+  transition: background 0.15s;
+}
+
+.conso-subtotal-annee .conso-toggle {
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.45);
+}
+
+.conso-toggle:hover {
+  background: rgba(0,0,0,0.18);
+}
+
+.conso-subtotal-annee .conso-toggle:hover {
+  background: rgba(255,255,255,0.35);
+}
+
+/* ─── Barre de mini-graphe kWh */
+.kwh-bar-wrap {
+  display: inline-block;
+  width: 60px;
+  height: 8px;
+  background: #313244;
+  border-radius: 4px;
+  vertical-align: middle;
+  margin-left: 0.4rem;
+}
+
+.kwh-bar {
+  height: 100%;
+  border-radius: 4px;
+  background: #a6e3a1;
+  transition: width 0.3s;
+}

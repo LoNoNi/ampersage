@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Comparateur de factures électricité</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+
+  <!-- Bandeau de navigation -->
+  <nav class="navbar">
+    <div class="nav-brand">⚡ Factures Électricité</div>
+    <div class="nav-links">
+      <button class="nav-btn active" data-page="home" data-i18n="nav_home">Accueil</button>
+      <button class="nav-btn" data-page="settings" data-i18n="nav_settings">Paramètres</button>
+    </div>
+    <div class="nav-lang">
+      <button class="lang-btn active" data-lang="FR">FR</button>
+      <button class="lang-btn" data-lang="EN">EN</button>
+    </div>
+    <button class="debug-toggle-btn" id="debug-toggle" title="Afficher/masquer le panneau de débogage">🐛 Debug</button>
+  </nav>
+
+  <!-- Barre de statuts (visible sur toutes les pages) -->
+  <div class="status-bar" id="status-bar">
+    <div class="status-item" id="status-global">
+      <span class="status-label">Global :</span>
+      <span class="status-value" id="val-global">—</span>
+    </div>
+    <div class="status-item" id="status-api-conso">
+      <span class="status-label">API Conso :</span>
+      <span class="status-value" id="val-api-conso">—</span>
+    </div>
+    <div class="status-item script-status" id="status-sobry">
+      <span class="status-label">Sobry :</span>
+      <span class="status-value" id="val-sobry">—</span>
+    </div>
+    <div class="status-item script-status" id="status-trv_base">
+      <span class="status-label">TRV Base :</span>
+      <span class="status-value" id="val-trv_base">—</span>
+    </div>
+    <div class="status-item script-status" id="status-trv_hchp">
+      <span class="status-label">TRV HC/HP :</span>
+      <span class="status-value" id="val-trv_hchp">—</span>
+    </div>
+    <div class="status-item script-status" id="status-trv_tempo">
+      <span class="status-label">TRV Tempo :</span>
+      <span class="status-value" id="val-trv_tempo">—</span>
+    </div>
+  </div>
+
+  <!-- Contenu principal -->
+  <main class="content">
+
+    <!-- Page Accueil -->
+    <section id="page-home" class="page active">
+      <div id="main-content">
+        <p>Chargement...</p>
+      </div>
+    </section>
+
+    <!-- Page Paramètres -->
+    <section id="page-settings" class="page">
+
+      <!-- Groupe Globaux -->
+      <div class="param-group" id="group-global">
+        <h2 data-i18n="group_global">Paramètres globaux</h2>
+        <div class="param-fields">
+          <label>Port
+            <input type="number" id="param-port" value="8080" />
+          </label>
+          <label data-i18n-label="group_global">Langue
+            <select id="param-langue">
+              <option value="FR">FR</option>
+              <option value="EN">EN</option>
+            </select>
+          </label>
+        </div>
+        <div class="param-actions">
+          <button class="btn-save" data-groupe="global" data-i18n="btn_save">Sauvegarder</button>
+        </div>
+      </div>
+
+      <!-- Groupe API Conso (panel chargé dynamiquement) -->
+      <div class="param-group" id="group-api_conso">
+        <div id="panel-container-api_conso"><p class="placeholder">Chargement...</p></div>
+        <div class="param-actions">
+          <button class="btn-save" data-groupe="api_conso" data-i18n="btn_save">Sauvegarder</button>
+          <button class="btn-init" data-script="api_conso" data-i18n="btn_init">Initialiser</button>
+          <button class="btn-history" data-i18n="btn_search_history">Rechercher historique</button>
+        </div>
+        <div class="param-status-msg" id="api_conso-msg"></div>
+      </div>
+
+      <!-- Groupe Sobry (panel chargé dynamiquement) -->
+      <div class="param-group" id="group-sobry">
+        <div id="panel-container-sobry"><p class="placeholder">Chargement...</p></div>
+        <div class="param-actions">
+          <button class="btn-save" data-groupe="sobry" data-i18n="btn_save">Sauvegarder</button>
+          <button class="btn-init" data-script="sobry" data-i18n="btn_init">Initialiser</button>
+        </div>
+        <div class="param-status-msg" id="sobry-msg"></div>
+      </div>
+
+      <!-- Groupe TRV Base (panel chargé dynamiquement) -->
+      <div class="param-group" id="group-trv_base">
+        <div id="panel-container-trv_base"><p class="placeholder">Chargement...</p></div>
+        <div class="param-actions">
+          <button class="btn-save" data-groupe="trv_base" data-i18n="btn_save">Sauvegarder</button>
+          <button class="btn-init" data-script="trv_base" data-i18n="btn_init">Initialiser</button>
+        </div>
+        <div class="param-status-msg" id="trv_base-msg"></div>
+      </div>
+
+      <!-- Groupe TRV HC/HP (panel chargé dynamiquement) -->
+      <div class="param-group" id="group-trv_hchp">
+        <div id="panel-container-trv_hchp"><p class="placeholder">Chargement...</p></div>
+        <div class="param-actions">
+          <button class="btn-save" data-groupe="trv_hchp" data-i18n="btn_save">Sauvegarder</button>
+          <button class="btn-init" data-script="trv_hchp" data-i18n="btn_init">Initialiser</button>
+        </div>
+        <div class="param-status-msg" id="trv_hchp-msg"></div>
+      </div>
+
+      <!-- Groupe TRV Tempo (panel chargé dynamiquement) -->
+      <div class="param-group" id="group-trv_tempo">
+        <div id="panel-container-trv_tempo"><p class="placeholder">Chargement...</p></div>
+        <div class="param-actions">
+          <button class="btn-save" data-groupe="trv_tempo" data-i18n="btn_save">Sauvegarder</button>
+          <button class="btn-init" data-script="trv_tempo" data-i18n="btn_init">Initialiser</button>
+        </div>
+        <div class="param-status-msg" id="trv_tempo-msg"></div>
+      </div>
+
+      <!-- Groupe Voiture -->
+      <div class="param-group" id="group-voiture">
+        <h2 data-i18n="group_voiture">Voiture</h2>
+        <p class="placeholder" data-i18n="placeholder_todo">À configurer</p>
+      </div>
+
+    </section>
+
+  </main>
+
+  <!-- Panneau de débogage (masqué par défaut) -->
+  <div id="debug-panel" class="debug-panel hidden">
+    <div class="debug-header">
+      <span class="debug-title">🐛 Panneau de débogage</span>
+      <span class="debug-ts" id="debug-ts">—</span>
+      <button class="debug-refresh" id="debug-refresh">↺ Rafraîchir</button>
+      <button class="debug-close" id="debug-close">✕</button>
+    </div>
+    <div class="debug-body">
+
+      <!-- Statuts -->
+      <div class="debug-section">
+        <div class="debug-section-title">Statuts</div>
+        <div id="debug-statuts" class="debug-content"></div>
+      </div>
+
+      <!-- Données API Conso -->
+      <div class="debug-section">
+        <div class="debug-section-title">
+          Données API Conso
+          <span class="debug-badge" id="debug-api-conso-count"></span>
+        </div>
+        <div id="debug-api-conso" class="debug-content debug-table-wrap"></div>
+      </div>
+
+      <!-- Données tarifs -->
+      <div class="debug-section">
+        <div class="debug-section-title">Tarifs</div>
+        <div id="debug-tarifs" class="debug-content"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Disclaimer -->
+  <div id="disclaimer-overlay" class="disclaimer-overlay">
+    <div class="disclaimer-modal">
+      <button id="disclaimer-close" class="disclaimer-close" title="Fermer">✕</button>
+      <h2 class="disclaimer-titre">⚠️ Avertissement important</h2>
+      <div class="disclaimer-corps">
+        <p><strong>Ampersage est un outil personnel d'estimation.</strong></p>
+        <p>
+          Les calculs et comparaisons affichés sont fournis à titre <strong>indicatif uniquement</strong>.
+          Ils ne constituent en aucun cas un document contractuel, une offre commerciale,
+          ni un conseil financier ou énergétique.
+        </p>
+        <p>
+          Les montants affichés sont des <strong>estimations</strong> basées sur vos données de consommation
+          et les tarifs publics disponibles. Ils peuvent différer de vos factures réelles en raison
+          des taxes, ajustements tarifaires, arrondis ou données incomplètes.
+        </p>
+        <p>
+          <strong>Avant toute décision de changement d'offre ou de fournisseur</strong>, vérifiez
+          les conditions tarifaires directement auprès des fournisseurs concernés.
+        </p>
+        <p class="disclaimer-responsabilite">
+          L'auteur d'Ampersage décline toute responsabilité quant aux décisions prises
+          sur la base des informations affichées par cet outil.
+        </p>
+      </div>
+      <div class="disclaimer-actions">
+        <label class="disclaimer-check-label">
+          <input type="checkbox" id="disclaimer-ne-plus-montrer" />
+          Ne plus afficher pendant 7 jours
+        </label>
+        <div class="disclaimer-btns">
+          <button id="disclaimer-refuser" class="disclaimer-btn disclaimer-btn-refuser">Refuser</button>
+          <button id="disclaimer-accepter" class="disclaimer-btn">Accepter</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

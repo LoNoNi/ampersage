@@ -1,0 +1,585 @@
+<style>
+  .sobry-panel { font-family: inherit; }
+
+  .sobry-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #ccfbf1;
+  }
+
+  .sobry-logo {
+    background: #0f766e;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 900;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+  }
+
+  .sobry-brand-desc { color: #888; font-size: 0.85rem; }
+
+  .sobry-units { font-size: 0.78rem; color: #999; margin-bottom: 0.75rem; }
+
+  /* ── Grille de paramètres ── */
+  .sobry-params-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    background: #f0fdfa;
+    border-radius: 6px;
+    border: 1px solid #ccfbf1;
+  }
+
+  .sobry-param-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .sobry-param-label {
+    font-size: 0.82rem;
+    font-weight: 600;
+    color: #555;
+    white-space: nowrap;
+    min-width: 120px;
+  }
+
+  /* Champ texte URL */
+  .sobry-input-url {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.28rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.82rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .sobry-input-url:focus { border-color: #0f766e; box-shadow: 0 0 0 2px rgba(15,118,110,0.12); }
+
+  /* Champ numérique */
+  .sobry-input-num {
+    width: 72px;
+    padding: 0.28rem 0.4rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.82rem;
+    font-family: inherit;
+    text-align: right;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .sobry-input-num:focus { border-color: #0f766e; box-shadow: 0 0 0 2px rgba(15,118,110,0.12); }
+
+  /* ── Bascule (toggle group) ── */
+  .sobry-toggle-group {
+    display: inline-flex;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    overflow: hidden;
+  }
+
+  .sobry-toggle-group input[type="radio"] { display: none; }
+
+  .sobry-toggle-group label {
+    padding: 0.25rem 0.65rem;
+    font-size: 0.80rem;
+    font-weight: 600;
+    color: #666;
+    background: white;
+    cursor: pointer;
+    border-right: 1px solid #ccc;
+    transition: background 0.15s, color 0.15s;
+    white-space: nowrap;
+    user-select: none;
+  }
+  .sobry-toggle-group label:last-of-type { border-right: none; }
+
+  .sobry-toggle-group input[type="radio"]:checked + label {
+    background: #0f766e;
+    color: white;
+  }
+
+  /* ── Cases à cocher TURPE ── */
+  .sobry-turpe-list {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+  }
+
+  .sobry-turpe-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.2rem 0.55rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+    user-select: none;
+    font-size: 0.80rem;
+    font-weight: 600;
+    color: #555;
+    background: white;
+    transition: border-color 0.15s, background 0.15s, color 0.15s;
+  }
+  .sobry-turpe-item:hover { border-color: #0f766e; }
+  .sobry-turpe-item input[type="checkbox"] { display: none; }
+  .sobry-turpe-item.actif {
+    background: #ccfbf1;
+    border-color: #0f766e;
+    color: #0f766e;
+  }
+
+  /* ── Tableaux (tranches + produits) ── */
+  .sobry-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+
+  .sobry-table th {
+    text-align: center;
+    font-weight: 700;
+    padding: 0.45rem 0.5rem;
+    border-bottom: 2px solid #ddd;
+    background: #f0fdfa;
+    color: #0f766e;
+    white-space: nowrap;
+  }
+  .sobry-table th.col-puissance,
+  .sobry-table th.col-ext { background: #f5f5f5; color: #444; }
+
+  .sobry-table td {
+    padding: 0.35rem 0.4rem;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+    text-align: center;
+  }
+  .sobry-table tr:hover td { background: #fafafa; }
+  .sobry-table tr.extinction td { color: #aaa; }
+  .td-puissance { font-weight: 700; color: #333; text-align: left; white-space: nowrap; }
+
+  .sobry-table input[type="number"] {
+    width: 80px;
+    padding: 0.28rem 0.4rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.82rem;
+    font-family: inherit;
+    text-align: right;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .sobry-table input[type="number"]:focus {
+    border-color: #0f766e;
+    box-shadow: 0 0 0 2px rgba(15,118,110,0.12);
+  }
+
+  /* Toggle extinction */
+  .toggle-extinction {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    cursor: pointer;
+    user-select: none;
+  }
+  .toggle-extinction input[type="checkbox"] { display: none; }
+  .toggle-track {
+    width: 34px; height: 18px; border-radius: 9px;
+    background: #ccc; position: relative; transition: background 0.2s; flex-shrink: 0;
+  }
+  .toggle-track::after {
+    content: ''; position: absolute;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: white; top: 3px; left: 3px; transition: left 0.2s;
+  }
+  .toggle-extinction input:checked + .toggle-track { background: #e07800; }
+  .toggle-extinction input:checked + .toggle-track::after { left: 17px; }
+  .toggle-label { font-size: 0.75rem; font-weight: 600; color: #888; min-width: 20px; }
+  .toggle-extinction input:checked ~ .toggle-label { color: #e07800; }
+
+  /* ── Section produit (SoCap / SoFlex) ── */
+  .sobry-product-wrap {
+    display: flex;
+    gap: 1.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+  }
+
+  .sobry-product-section {
+    flex: 1;
+    min-width: 260px;
+  }
+
+  .sobry-product-title {
+    font-size: 0.88rem;
+    font-weight: 800;
+    color: #0f766e;
+    margin: 0 0 0.4rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid #ccfbf1;
+  }
+
+  .sobry-product-section .sobry-table th { font-size: 0.78rem; }
+  .sobry-product-section .sobry-table td { font-size: 0.82rem; }
+  .sobry-product-section .sobry-table input[type="number"] { width: 70px; font-size: 0.80rem; }
+</style>
+
+<div class="sobry-panel">
+
+  <div class="sobry-brand">
+    <span class="sobry-logo">Sobry</span>
+    <span class="sobry-brand-desc">Tarif dynamique EPEX Spot Day-Ahead</span>
+  </div>
+
+  <p class="sobry-units">Abonnement en €/mois HT · Marges et primes en €/kWh · Plafonds en €/kWh</p>
+
+  <div class="sobry-params-grid">
+
+    <!-- URL API -->
+    <div class="sobry-param-row">
+      <span class="sobry-param-label">URL API</span>
+      <input type="text" id="sobry-adresse" class="sobry-input-url"
+             value="https://api.sobry.co/api/prices/raw" />
+    </div>
+
+    <!-- Granularité -->
+    <div class="sobry-param-row">
+      <span class="sobry-param-label">Granularité</span>
+      <div class="sobry-toggle-group" id="sobry-granularity-group">
+        <input type="radio" name="sobry-granularity" id="sbg-qh" value="quarter_hourly" />
+        <label for="sbg-qh">15 min</label>
+        <input type="radio" name="sobry-granularity" id="sbg-h"  value="hourly" checked />
+        <label for="sbg-h">Horaire</label>
+        <input type="radio" name="sobry-granularity" id="sbg-d"  value="daily" />
+        <label for="sbg-d">Journalier</label>
+      </div>
+    </div>
+
+    <!-- Affichage HT / TTC -->
+    <div class="sobry-param-row">
+      <span class="sobry-param-label">Affichage</span>
+      <div class="sobry-toggle-group" id="sobry-display-group">
+        <input type="radio" name="sobry-display" id="sbd-ht"  value="HT" />
+        <label for="sbd-ht">HT</label>
+        <input type="radio" name="sobry-display" id="sbd-ttc" value="TTC" checked />
+        <label for="sbd-ttc">TTC</label>
+      </div>
+    </div>
+
+    <!-- TURPE -->
+    <div class="sobry-param-row">
+      <span class="sobry-param-label">TURPE</span>
+      <div class="sobry-turpe-list" id="sobry-turpe-list">
+        <label class="sobry-turpe-item actif" data-turpe="CU">
+          <input type="checkbox" value="CU" checked /> CU
+        </label>
+        <label class="sobry-turpe-item" data-turpe="CU4">
+          <input type="checkbox" value="CU4" /> CU4
+        </label>
+        <label class="sobry-turpe-item" data-turpe="MU4">
+          <input type="checkbox" value="MU4" /> MU4
+        </label>
+        <label class="sobry-turpe-item" data-turpe="MUDT">
+          <input type="checkbox" value="MUDT" /> MUDT
+        </label>
+        <label class="sobry-turpe-item" data-turpe="LU">
+          <input type="checkbox" value="LU" /> LU
+        </label>
+      </div>
+    </div>
+
+    <!-- Marge HT -->
+    <div class="sobry-param-row">
+      <span class="sobry-param-label">Marge HT (€/kWh)</span>
+      <input type="number" id="sobry-marge-ht" class="sobry-input-num"
+             step="0.0001" min="0" value="0.0080" />
+    </div>
+
+    <!-- Marge TTC -->
+    <div class="sobry-param-row">
+      <span class="sobry-param-label">Marge TTC (€/kWh)</span>
+      <input type="number" id="sobry-marge-ttc" class="sobry-input-num"
+             step="0.0001" min="0" value="0.0096" />
+    </div>
+
+  </div>
+
+  <!-- Produits SoCap / SoFlex -->
+  <div class="sobry-product-wrap">
+
+    <!-- SoCap -->
+    <div class="sobry-product-section">
+      <p class="sobry-product-title">SoCap — plafonds prix moyen mensuel</p>
+      <table class="sobry-table">
+        <thead>
+          <tr>
+            <th class="col-puissance"></th>
+            <th>HT<br/><span style="font-weight:400;color:#999;font-size:0.72rem">€/kWh</span></th>
+            <th>TTC<br/><span style="font-weight:400;color:#999;font-size:0.72rem">€/kWh</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-puissance">Plafond été</td>
+            <td><input type="number" step="0.0001" min="0" id="socap-plafond-ete-ht"    value="0.1125" /></td>
+            <td><input type="number" step="0.0001" min="0" id="socap-plafond-ete-ttc"   value="0.1350" /></td>
+          </tr>
+          <tr>
+            <td class="td-puissance">Plafond hiver</td>
+            <td><input type="number" step="0.0001" min="0" id="socap-plafond-hiver-ht"  value="0.2167" /></td>
+            <td><input type="number" step="0.0001" min="0" id="socap-plafond-hiver-ttc" value="0.2600" /></td>
+          </tr>
+          <tr>
+            <td class="td-puissance">Prime couverture</td>
+            <td><input type="number" step="0.0001" min="0" id="socap-prime-ht"          value="0.0070" /></td>
+            <td><input type="number" step="0.0001" min="0" id="socap-prime-ttc"         value="0.0084" /></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- SoFlex -->
+    <div class="sobry-product-section">
+      <p class="sobry-product-title">SoFlex — plafonds prix moyen mensuel</p>
+      <table class="sobry-table">
+        <thead>
+          <tr>
+            <th class="col-puissance"></th>
+            <th>HT<br/><span style="font-weight:400;color:#999;font-size:0.72rem">€/kWh</span></th>
+            <th>TTC<br/><span style="font-weight:400;color:#999;font-size:0.72rem">€/kWh</span></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="td-puissance">Plafond été</td>
+            <td><input type="number" step="0.0001" min="0" id="soflex-plafond-ete-ht"    value="0.3333" /></td>
+            <td><input type="number" step="0.0001" min="0" id="soflex-plafond-ete-ttc"   value="0.4000" /></td>
+          </tr>
+          <tr>
+            <td class="td-puissance">Plafond hiver</td>
+            <td><input type="number" step="0.0001" min="0" id="soflex-plafond-hiver-ht"  value="0.3333" /></td>
+            <td><input type="number" step="0.0001" min="0" id="soflex-plafond-hiver-ttc" value="0.4000" /></td>
+          </tr>
+          <tr>
+            <td class="td-puissance">Prime couverture</td>
+            <td><input type="number" step="0.0001" min="0" id="soflex-prime-ht"          value="0.0020" /></td>
+            <td><input type="number" step="0.0001" min="0" id="soflex-prime-ttc"         value="0.0024" /></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+  </div>
+
+  <!-- Tableau des tranches d'abonnement -->
+  <table class="sobry-table" id="sobry-table">
+    <thead>
+      <tr>
+        <th class="col-puissance">Puissance<br/><span style="font-weight:400;color:#999;font-size:0.75rem">kVA</span></th>
+        <th>Abonnement<br/><span style="font-weight:400;color:#999;font-size:0.75rem">€/mois</span></th>
+        <th class="col-ext">En<br/>extinction</th>
+      </tr>
+    </thead>
+    <tbody id="sobry-tbody"></tbody>
+  </table>
+
+</div>
+
+<script>
+(function () {
+  var TRANCHES_DEFAUT = [
+    { puissance:  3, abonnement:  9.53, extinction: false },
+    { puissance:  4, abonnement: 10.53, extinction: false },
+    { puissance:  5, abonnement: 11.52, extinction: false },
+    { puissance:  6, abonnement: 12.52, extinction: false },
+    { puissance:  7, abonnement: 13.52, extinction: false },
+    { puissance:  8, abonnement: 14.51, extinction: false },
+    { puissance:  9, abonnement: 15.51, extinction: false },
+    { puissance: 10, abonnement: 16.51, extinction: false },
+    { puissance: 11, abonnement: 17.50, extinction: false },
+    { puissance: 12, abonnement: 18.50, extinction: false },
+    { puissance: 13, abonnement: 19.50, extinction: false },
+    { puissance: 14, abonnement: 20.49, extinction: false },
+    { puissance: 15, abonnement: 21.49, extinction: false },
+    { puissance: 16, abonnement: 23.79, extinction: false },
+    { puissance: 17, abonnement: 26.10, extinction: false },
+    { puissance: 18, abonnement: 28.40, extinction: false },
+    { puissance: 19, abonnement: 28.90, extinction: false },
+    { puissance: 20, abonnement: 29.40, extinction: false },
+    { puissance: 21, abonnement: 29.90, extinction: false },
+    { puissance: 22, abonnement: 30.39, extinction: false },
+    { puissance: 23, abonnement: 30.89, extinction: false },
+    { puissance: 24, abonnement: 31.39, extinction: false },
+    { puissance: 25, abonnement: 33.57, extinction: false },
+    { puissance: 26, abonnement: 35.75, extinction: false },
+    { puissance: 27, abonnement: 37.93, extinction: false },
+    { puissance: 28, abonnement: 40.10, extinction: false },
+    { puissance: 29, abonnement: 42.28, extinction: false },
+    { puissance: 30, abonnement: 44.46, extinction: false },
+    { puissance: 31, abonnement: 45.78, extinction: false },
+    { puissance: 32, abonnement: 47.10, extinction: false },
+    { puissance: 33, abonnement: 48.43, extinction: false },
+    { puissance: 34, abonnement: 49.75, extinction: false },
+    { puissance: 35, abonnement: 51.07, extinction: false },
+    { puissance: 36, abonnement: 52.39, extinction: false },
+  ];
+
+  var SOCAP_DEFAUT = {
+    plafond_ete_ht:    0.1125, plafond_ete_ttc:    0.1350,
+    plafond_hiver_ht:  0.2167, plafond_hiver_ttc:  0.2600,
+    prime_ht:          0.0070, prime_ttc:           0.0084,
+  };
+
+  var SOFLEX_DEFAUT = {
+    plafond_ete_ht:    0.3333, plafond_ete_ttc:    0.4000,
+    plafond_hiver_ht:  0.3333, plafond_hiver_ttc:  0.4000,
+    prime_ht:          0.0020, prime_ttc:           0.0024,
+  };
+
+  /* ── Toggle visuels TURPE ── */
+  document.querySelectorAll('#sobry-turpe-list .sobry-turpe-item').forEach(function (lbl) {
+    lbl.addEventListener('click', function () {
+      var cb = lbl.querySelector('input[type="checkbox"]');
+      lbl.classList.toggle('actif', cb.checked);
+    });
+  });
+
+  /* ── Tableau des tranches ── */
+  function construireTableau(tranches) {
+    var tbody = document.getElementById('sobry-tbody');
+    tbody.innerHTML = '';
+    tranches.forEach(function (t) {
+      var tr = document.createElement('tr');
+      if (t.extinction) tr.classList.add('extinction');
+      tr.dataset.puissance = t.puissance;
+
+      var html = '<td class="td-puissance">' + t.puissance + ' kVA</td>';
+      html += '<td><input type="number" step="0.01" min="0" data-col="abonnement" value="' + t.abonnement.toFixed(2) + '" /></td>';
+      var checked = t.extinction ? 'checked' : '';
+      html += '<td><label class="toggle-extinction">' +
+        '<input type="checkbox" data-col="extinction" ' + checked + ' />' +
+        '<span class="toggle-track"></span>' +
+        '<span class="toggle-label">' + (t.extinction ? 'Oui' : 'Non') + '</span>' +
+        '</label></td>';
+      tr.innerHTML = html;
+
+      var checkbox = tr.querySelector('[data-col="extinction"]');
+      var label    = tr.querySelector('.toggle-label');
+      checkbox.addEventListener('change', function () {
+        label.textContent = this.checked ? 'Oui' : 'Non';
+        tr.classList.toggle('extinction', this.checked);
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  /* ── Lecture d'un produit depuis le DOM ── */
+  function lireProduitsDOM(prefix) {
+    function num(id) {
+      var el = document.getElementById(id);
+      return el ? parseFloat(el.value) : 0;
+    }
+    return {
+      plafond_ete_ht:    num(prefix + '-plafond-ete-ht'),
+      plafond_ete_ttc:   num(prefix + '-plafond-ete-ttc'),
+      plafond_hiver_ht:  num(prefix + '-plafond-hiver-ht'),
+      plafond_hiver_ttc: num(prefix + '-plafond-hiver-ttc'),
+      prime_ht:          num(prefix + '-prime-ht'),
+      prime_ttc:         num(prefix + '-prime-ttc'),
+    };
+  }
+
+  /* ── Peuplement d'un produit dans le DOM ── */
+  function remplirProduitDOM(prefix, data, defaut) {
+    var d = data || defaut;
+    function set(id, key) {
+      var el = document.getElementById(id);
+      if (el && d[key] !== undefined) el.value = d[key];
+    }
+    set(prefix + '-plafond-ete-ht',    'plafond_ete_ht');
+    set(prefix + '-plafond-ete-ttc',   'plafond_ete_ttc');
+    set(prefix + '-plafond-hiver-ht',  'plafond_hiver_ht');
+    set(prefix + '-plafond-hiver-ttc', 'plafond_hiver_ttc');
+    set(prefix + '-prime-ht',          'prime_ht');
+    set(prefix + '-prime-ttc',         'prime_ttc');
+  }
+
+  /* ── getParams / setParams ── */
+  window.getParams_sobry = function () {
+    var tranches = [];
+    document.querySelectorAll('#sobry-tbody tr').forEach(function (tr) {
+      tranches.push({
+        puissance:  parseInt(tr.dataset.puissance),
+        abonnement: parseFloat(tr.querySelector('[data-col="abonnement"]').value),
+        extinction: tr.querySelector('[data-col="extinction"]').checked,
+      });
+    });
+
+    var adresse   = document.getElementById('sobry-adresse');
+    var margeHt   = document.getElementById('sobry-marge-ht');
+    var margeTtc  = document.getElementById('sobry-marge-ttc');
+    var granSel   = document.querySelector('input[name="sobry-granularity"]:checked');
+    var dispSel   = document.querySelector('input[name="sobry-display"]:checked');
+
+    var turpeActifs = [];
+    document.querySelectorAll('#sobry-turpe-list input[type="checkbox"]').forEach(function (cb) {
+      if (cb.checked) turpeActifs.push(cb.value);
+    });
+
+    return {
+      tranches:     tranches,
+      adresse:      adresse  ? adresse.value              : 'https://api.sobry.co/api/prices/raw',
+      granularity:  granSel  ? granSel.value              : 'hourly',
+      display:      dispSel  ? dispSel.value              : 'TTC',
+      turpe_actifs: turpeActifs,
+      marge_ht:     margeHt  ? parseFloat(margeHt.value)  : 0.0080,
+      marge_ttc:    margeTtc ? parseFloat(margeTtc.value) : 0.0096,
+      socap:        lireProduitsDOM('socap'),
+      soflex:       lireProduitsDOM('soflex'),
+    };
+  };
+
+  window.setParams_sobry = function (data) {
+    construireTableau((data && data.tranches) ? data.tranches : TRANCHES_DEFAUT);
+
+    var adresse  = document.getElementById('sobry-adresse');
+    var margeHt  = document.getElementById('sobry-marge-ht');
+    var margeTtc = document.getElementById('sobry-marge-ttc');
+
+    if (adresse  && data && data.adresse)    adresse.value   = data.adresse;
+    if (margeHt  && data && data.marge_ht  !== undefined) margeHt.value  = data.marge_ht;
+    if (margeTtc && data && data.marge_ttc !== undefined) margeTtc.value = data.marge_ttc;
+
+    if (data && data.granularity) {
+      var r = document.querySelector('input[name="sobry-granularity"][value="' + data.granularity + '"]');
+      if (r) r.checked = true;
+    }
+    if (data && data.display) {
+      var d = document.querySelector('input[name="sobry-display"][value="' + data.display + '"]');
+      if (d) d.checked = true;
+    }
+    if (data && data.turpe_actifs) {
+      document.querySelectorAll('#sobry-turpe-list .sobry-turpe-item').forEach(function (lbl) {
+        var cb    = lbl.querySelector('input[type="checkbox"]');
+        var actif = data.turpe_actifs.indexOf(cb.value) !== -1;
+        cb.checked = actif;
+        lbl.classList.toggle('actif', actif);
+      });
+    }
+
+    remplirProduitDOM('socap',  data ? data.socap  : null, SOCAP_DEFAUT);
+    remplirProduitDOM('soflex', data ? data.soflex : null, SOFLEX_DEFAUT);
+  };
+
+  construireTableau(TRANCHES_DEFAUT);
+})();
+</script>

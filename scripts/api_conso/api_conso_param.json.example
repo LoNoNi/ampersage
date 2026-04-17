@@ -1,0 +1,11 @@
+{
+  "adresse": "https://conso.boris.sh/api/",
+  "commentaire": "",
+  "token": null,
+  "prm": null,
+  "nb_jours": 7,
+  "auto_refresh": false,
+  "derniere_maj": null,
+  "prochaine_maj": null,
+  "statut": "non initialisé"
+}

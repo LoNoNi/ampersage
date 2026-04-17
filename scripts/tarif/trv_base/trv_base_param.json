@@ -1,0 +1,61 @@
+{
+  "adresse": "https://mock.edf-trv-base.example.com/api",
+  "commentaire": "Script TRV option Base mock",
+  "puissance_souscrite": 6,
+  "tranches": [
+    {
+      "puissance": 3,
+      "abonnement": 12.03,
+      "prix_kwh": 19.4,
+      "extinction": false
+    },
+    {
+      "puissance": 6,
+      "abonnement": 15.65,
+      "prix_kwh": 19.4,
+      "extinction": false
+    },
+    {
+      "puissance": 9,
+      "abonnement": 19.56,
+      "prix_kwh": 19.27,
+      "extinction": true
+    },
+    {
+      "puissance": 12,
+      "abonnement": 23.32,
+      "prix_kwh": 19.27,
+      "extinction": true
+    },
+    {
+      "puissance": 15,
+      "abonnement": 26.84,
+      "prix_kwh": 19.27,
+      "extinction": true
+    },
+    {
+      "puissance": 18,
+      "abonnement": 30.49,
+      "prix_kwh": 19.27,
+      "extinction": true
+    },
+    {
+      "puissance": 24,
+      "abonnement": 38.24,
+      "prix_kwh": 19.27,
+      "extinction": true
+    },
+    {
+      "puissance": 30,
+      "abonnement": 45.37,
+      "prix_kwh": 19.27,
+      "extinction": true
+    },
+    {
+      "puissance": 36,
+      "abonnement": 52.54,
+      "prix_kwh": 19.27,
+      "extinction": true
+    }
+  ]
+}

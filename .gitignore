@@ -1,0 +1,50 @@
+# ─── Données personnelles (NE JAMAIS COMMITTER) ──────────────────────────────
+
+# Paramètres API conso : contient le token et le PRM
+scripts/api_conso/api_conso_param.json
+
+# Données de consommation : mesures personnelles
+scripts/api_conso/api_conso_data.json
+
+# ─── Logs ────────────────────────────────────────────────────────────────────
+
+logs/
+
+# ─── Fichiers générés au runtime ─────────────────────────────────────────────
+
+# Paramètres globaux (générés au démarrage)
+parametres.json
+
+# Données calculées par les scripts tarif
+*_data.json
+*_cache.json
+
+# ─── Python ──────────────────────────────────────────────────────────────────
+
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# ─── Environnement virtuel ────────────────────────────────────────────────────
+
+.env
+venv/
+.venv/
+env/
+
+# ─── IDE ─────────────────────────────────────────────────────────────────────
+
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# ─── Claude Code ─────────────────────────────────────────────────────────────
+
+.claude/

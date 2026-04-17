@@ -1,0 +1,285 @@
+<style>
+  .trv-hchp-panel {
+    font-family: inherit;
+  }
+
+  .trv-hchp-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e8f0fe;
+  }
+
+  .trv-hchp-logo {
+    background: #FF6200;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 900;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .trv-hchp-badge-option {
+    background: #e8f0fe;
+    color: #1a73e8;
+    font-size: 0.78rem;
+    font-weight: 700;
+    padding: 0.2rem 0.6rem;
+    border-radius: 4px;
+  }
+
+  .trv-hchp-brand-desc {
+    color: #888;
+    font-size: 0.85rem;
+  }
+
+  .trv-hchp-units {
+    font-size: 0.78rem;
+    color: #999;
+    margin-bottom: 0.75rem;
+  }
+
+  .trv-hchp-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+
+  .trv-hchp-table th {
+    background: #f5f5f5;
+    color: #444;
+    font-weight: 700;
+    padding: 0.55rem 0.75rem;
+    text-align: left;
+    border-bottom: 2px solid #ddd;
+    white-space: nowrap;
+  }
+
+  .trv-hchp-table th .unit {
+    font-weight: 400;
+    color: #999;
+    font-size: 0.78rem;
+    margin-left: 0.3rem;
+  }
+
+  .trv-hchp-table th.th-hp { border-top: 3px solid #e07800; }
+  .trv-hchp-table th.th-hc { border-top: 3px solid #1a73e8; }
+
+  .trv-hchp-table td {
+    padding: 0.4rem 0.75rem;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+  }
+
+  .trv-hchp-table tr:hover td {
+    background: #fafafa;
+  }
+
+  .trv-hchp-table tr.extinction td {
+    color: #aaa;
+  }
+
+  .td-puissance {
+    font-weight: 700;
+    color: #333;
+    width: 110px;
+  }
+
+  .trv-hchp-table input[type="number"] {
+    width: 90px;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    text-align: right;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .trv-hchp-table input[data-col="prix_hp"]:focus { border-color: #e07800; box-shadow: 0 0 0 2px rgba(224,120,0,0.15); }
+  .trv-hchp-table input[data-col="prix_hc"]:focus { border-color: #1a73e8; box-shadow: 0 0 0 2px rgba(26,115,232,0.15); }
+  .trv-hchp-table input[data-col="abonnement"]:focus { border-color: #FF6200; box-shadow: 0 0 0 2px rgba(255,98,0,0.15); }
+
+  .toggle-extinction {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .toggle-extinction input[type="checkbox"] { display: none; }
+
+  .toggle-track {
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+    background: #ccc;
+    position: relative;
+    transition: background 0.2s;
+    flex-shrink: 0;
+  }
+
+  .toggle-track::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: white;
+    top: 3px;
+    left: 3px;
+    transition: left 0.2s;
+  }
+
+  .toggle-extinction input:checked + .toggle-track { background: #e07800; }
+  .toggle-extinction input:checked + .toggle-track::after { left: 19px; }
+
+  .toggle-label {
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #888;
+    min-width: 22px;
+  }
+
+  .toggle-extinction input:checked ~ .toggle-label { color: #e07800; }
+
+  .trv-hchp-plage-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid #eee;
+  }
+
+  .trv-hchp-plage-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #555;
+    white-space: nowrap;
+  }
+
+  .trv-hchp-plage-input {
+    flex: 1;
+    max-width: 280px;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .trv-hchp-plage-input:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+  }
+</style>
+
+<div class="trv-hchp-panel">
+
+  <div class="trv-hchp-brand">
+    <span class="trv-hchp-logo">EDF</span>
+    <span class="trv-hchp-badge-option">HC / HP</span>
+    <span class="trv-hchp-brand-desc">Tarif Réglementé de Vente — Option Heures Creuses / Heures Pleines</span>
+  </div>
+
+  <p class="trv-hchp-units">Abonnement en €/mois HT · Prix du kWh en c€/kWh HT</p>
+
+  <table class="trv-hchp-table" id="trv-hchp-table">
+    <thead>
+      <tr>
+        <th>Puissance souscrite <span class="unit">kVA</span></th>
+        <th>Abonnement <span class="unit">€/mois</span></th>
+        <th class="th-hp">Prix kWh HP <span class="unit">c€/kWh</span></th>
+        <th class="th-hc">Prix kWh HC <span class="unit">c€/kWh</span></th>
+        <th>En extinction</th>
+      </tr>
+    </thead>
+    <tbody id="trv-hchp-tbody">
+      <!-- Rempli par le script -->
+    </tbody>
+  </table>
+
+  <div class="trv-hchp-plage-row">
+    <label class="trv-hchp-plage-label" for="trv-hchp-plage-hc">Plage heures creuses</label>
+    <input type="text" id="trv-hchp-plage-hc" class="trv-hchp-plage-input"
+           value="22h00→6h00 + 12h00→14h00" placeholder="ex: 22h00→6h00 + 12h00→14h00" />
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var TRANCHES_DEFAUT = [
+    { puissance: 3,  abonnement: 12.63, prix_hp: 20.65, prix_hc: 15.79, extinction: false },
+    { puissance: 6,  abonnement: 16.73, prix_hp: 20.65, prix_hc: 15.79, extinction: false },
+    { puissance: 9,  abonnement: 20.90, prix_hp: 20.65, prix_hc: 15.79, extinction: false },
+    { puissance: 12, abonnement: 24.98, prix_hp: 20.65, prix_hc: 15.79, extinction: false },
+    { puissance: 15, abonnement: 28.97, prix_hp: 20.65, prix_hc: 15.79, extinction: false },
+    { puissance: 18, abonnement: 32.96, prix_hp: 20.65, prix_hc: 15.79, extinction: false },
+    { puissance: 24, abonnement: 41.24, prix_hp: 20.65, prix_hc: 15.79, extinction: false },
+    { puissance: 30, abonnement: 48.23, prix_hp: 20.65, prix_hc: 15.79, extinction: false },
+    { puissance: 36, abonnement: 56.22, prix_hp: 20.65, prix_hc: 15.79, extinction: false },
+  ];
+
+  function construireTableau(tranches) {
+    var tbody = document.getElementById('trv-hchp-tbody');
+    tbody.innerHTML = '';
+    tranches.forEach(function (t) {
+      var tr = document.createElement('tr');
+      if (t.extinction) tr.classList.add('extinction');
+      tr.dataset.puissance = t.puissance;
+      var checked = t.extinction ? 'checked' : '';
+      tr.innerHTML =
+        '<td class="td-puissance">' + t.puissance + ' kVA</td>' +
+        '<td><input type="number" step="0.01" min="0" data-col="abonnement" value="' + t.abonnement.toFixed(2) + '" /></td>' +
+        '<td><input type="number" step="0.01" min="0" data-col="prix_hp"    value="' + t.prix_hp.toFixed(2)    + '" /></td>' +
+        '<td><input type="number" step="0.01" min="0" data-col="prix_hc"    value="' + t.prix_hc.toFixed(2)    + '" /></td>' +
+        '<td><label class="toggle-extinction">' +
+          '<input type="checkbox" data-col="extinction" ' + checked + ' />' +
+          '<span class="toggle-track"></span>' +
+          '<span class="toggle-label">' + (t.extinction ? 'Oui' : 'Non') + '</span>' +
+        '</label></td>';
+
+      var checkbox = tr.querySelector('[data-col="extinction"]');
+      var label    = tr.querySelector('.toggle-label');
+      checkbox.addEventListener('change', function () {
+        label.textContent = this.checked ? 'Oui' : 'Non';
+        tr.classList.toggle('extinction', this.checked);
+      });
+
+      tbody.appendChild(tr);
+    });
+  }
+
+  window.getParams_trv_hchp = function () {
+    var tranches = [];
+    document.querySelectorAll('#trv-hchp-tbody tr').forEach(function (tr) {
+      tranches.push({
+        puissance:  parseInt(tr.dataset.puissance),
+        abonnement: parseFloat(tr.querySelector('[data-col="abonnement"]').value),
+        prix_hp:    parseFloat(tr.querySelector('[data-col="prix_hp"]').value),
+        prix_hc:    parseFloat(tr.querySelector('[data-col="prix_hc"]').value),
+        extinction: tr.querySelector('[data-col="extinction"]').checked,
+      });
+    });
+    var plage_hc = document.getElementById('trv-hchp-plage-hc');
+    return { tranches: tranches, plage_hc: plage_hc ? plage_hc.value : '22h00→6h00 + 12h00→14h00' };
+  };
+
+  window.setParams_trv_hchp = function (data) {
+    construireTableau((data && data.tranches) ? data.tranches : TRANCHES_DEFAUT);
+    var plage_hc = document.getElementById('trv-hchp-plage-hc');
+    if (plage_hc && data && data.plage_hc) plage_hc.value = data.plage_hc;
+  };
+
+  construireTableau(TRANCHES_DEFAUT);
+})();
+</script>

@@ -1,0 +1,413 @@
+<style>
+  .api-conso-panel {
+    font-family: inherit;
+  }
+
+  .api-conso-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e8f0fe;
+  }
+
+  .api-conso-logo {
+    background: #0070C0;
+    color: white;
+    font-size: 1rem;
+    font-weight: 900;
+    letter-spacing: -0.5px;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+  }
+
+  .api-conso-brand-desc {
+    color: #888;
+    font-size: 0.85rem;
+  }
+
+  .api-conso-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .api-conso-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #555;
+  }
+
+  .api-conso-grid label.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .api-conso-grid input {
+    padding: 0.45rem 0.75rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.95rem;
+    outline: none;
+    transition: border-color 0.2s;
+    font-family: inherit;
+  }
+
+  .api-conso-grid input:focus {
+    border-color: #0070C0;
+    box-shadow: 0 0 0 2px rgba(0,112,192,0.15);
+  }
+
+  .api-conso-grid input[readonly] {
+    background: #f5f5f5;
+    color: #777;
+    cursor: default;
+  }
+
+  .api-conso-required {
+    color: #d32f2f;
+    margin-left: 2px;
+  }
+
+  .api-conso-hint {
+    font-size: 0.75rem;
+    color: #999;
+    font-weight: 400;
+    margin-top: 1px;
+  }
+
+  .api-conso-field-token {
+    position: relative;
+  }
+
+  .api-conso-field-token input {
+    width: 100%;
+    padding-right: 2.2rem;
+  }
+
+  .api-conso-eye {
+    position: absolute;
+    right: 0.5rem;
+    bottom: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #aaa;
+    font-size: 0.9rem;
+    padding: 0;
+    line-height: 1;
+  }
+
+  .api-conso-eye:hover { color: #0070C0; }
+
+  .api-conso-label-check {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center;
+    gap: 0.5rem;
+    font-weight: 400 !important;
+    color: #444 !important;
+    cursor: pointer;
+  }
+
+  .api-conso-label-check input[type="checkbox"] {
+    width: 1rem;
+    height: 1rem;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  .api-conso-maj-zone {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid #e8f0fe;
+  }
+
+  .api-conso-maj-info {
+    flex: 1;
+    font-size: 0.85rem;
+    color: #666;
+  }
+
+  .api-conso-btn-maj {
+    padding: 0.45rem 1.1rem;
+    background: #0070C0;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s, opacity 0.2s;
+    white-space: nowrap;
+  }
+
+  .api-conso-btn-maj:hover:not(:disabled) { background: #005fa3; }
+
+  .api-conso-btn-maj:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .api-conso-import {
+    margin-top: 1.25rem;
+    padding-top: 1rem;
+    border-top: 2px solid #e8f0fe;
+  }
+
+  .api-conso-import-label {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #555;
+    margin-bottom: 0.5rem;
+  }
+
+  .api-conso-drop-zone {
+    border: 2px dashed #90caf9;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    color: #888;
+    font-size: 0.88rem;
+    cursor: pointer;
+    transition: background 0.2s, border-color 0.2s;
+  }
+
+  .api-conso-drop-zone.drag-over {
+    background: #e8f4fd;
+    border-color: #0070C0;
+  }
+
+  .api-conso-browse {
+    color: #0070C0;
+    cursor: pointer;
+    text-decoration: underline;
+  }
+
+  .api-conso-import-status {
+    margin-top: 0.5rem;
+    font-size: 0.85rem;
+    min-height: 1.2em;
+  }
+
+  .api-conso-import-status.ok { color: #2e7d32; }
+  .api-conso-import-status.err { color: #c62828; }
+</style>
+
+<div class="api-conso-panel">
+
+  <div class="api-conso-brand">
+    <span class="api-conso-logo">API Conso</span>
+    <span class="api-conso-brand-desc">Gestionnaire du réseau de distribution — API Conso</span>
+  </div>
+
+  <div class="api-conso-grid">
+
+    <label class="full-width">
+      URL de l'API
+      <input data-param="adresse" type="text" />
+
+    </label>
+
+    <label>
+      Token d'accès <span class="api-conso-required">*</span>
+      <div class="api-conso-field-token">
+        <input data-param="token" type="password" placeholder="Votre token API conso" />
+        <button class="api-conso-eye" type="button" title="Afficher / masquer">👁</button>
+      </div>
+      <span class="api-conso-hint">Obtenez votre token sur <a href="https://conso.boris.sh" target="_blank" rel="noopener">conso.boris.sh</a></span>
+    </label>
+
+    <label>
+      N° PRM <span class="api-conso-required">*</span>
+      <input data-param="prm" type="text" maxlength="14" placeholder="14 chiffres" />
+      <span class="api-conso-hint">Visible sur votre facture d'électricité</span>
+    </label>
+
+    <label>
+      Jours à charger
+      <input data-param="nb_jours" type="number" min="1" max="60" value="7" />
+      <span class="api-conso-hint">Nombre de jours d'historique (1 – 60)</span>
+    </label>
+
+    <label>
+      Commentaire
+      <input data-param="commentaire" type="text" />
+    </label>
+
+    <label>
+      Statut
+      <input data-param="statut" type="text" readonly />
+    </label>
+
+    <label class="full-width api-conso-label-check">
+      <input data-param="auto_refresh" type="checkbox" id="apiConsoAutoRefresh" value="true" />
+      Actualisation automatique tous les 4 jours (heure aléatoire)
+    </label>
+
+    <input data-param="derniere_maj" type="hidden" id="apiConsoDerniereMaj" />
+    <input data-param="prochaine_maj" type="hidden" id="apiConsoProchaineMaj" />
+
+  </div>
+
+  <div class="api-conso-maj-zone">
+    <div id="apiConsoMajInfo" class="api-conso-maj-info"></div>
+    <button id="apiConsoUpdateBtn" class="api-conso-btn-maj" type="button">
+      Mettre à jour
+    </button>
+  </div>
+
+  <div class="api-conso-import">
+    <div class="api-conso-import-label">Import historique CSV Enedis</div>
+    <div class="api-conso-drop-zone" id="apiConsoDropZone">
+      <span id="apiConsoDropText">Glisser-déposer le fichier CSV ou <label for="apiConsoCsvInput" class="api-conso-browse">parcourir</label></span>
+      <input type="file" id="apiConsoCsvInput" accept=".csv,text/csv" style="display:none" />
+    </div>
+    <div id="apiConsoImportStatus" class="api-conso-import-status"></div>
+  </div>
+
+</div>
+
+<script>
+  (function () {
+    // Bouton œil
+    const input = document.querySelector('[data-param="token"]');
+    const btn = document.querySelector('.api-conso-eye');
+    if (input && btn) {
+      btn.addEventListener('click', () => {
+        input.type = input.type === 'password' ? 'text' : 'password';
+      });
+    }
+
+    // Checkbox auto_refresh : getter/setter personnalisé
+    window.getParams_api_conso = function () {
+      const params = {};
+      document.querySelectorAll('#panel-container-api_conso [data-param]:not([readonly]):not([type="hidden"])').forEach(el => {
+        if (el.type === 'checkbox') {
+          params[el.dataset.param] = el.checked;
+        } else {
+          params[el.dataset.param] = el.value || null;
+        }
+      });
+      return params;
+    };
+
+    window.setParams_api_conso = function (data) {
+      document.querySelectorAll('#panel-container-api_conso [data-param]').forEach(el => {
+        const v = data[el.dataset.param];
+        if (v === undefined || v === null) return;
+        if (el.type === 'checkbox') {
+          el.checked = (v === true || v === 'true');
+        } else {
+          el.value = v;
+        }
+      });
+      _majBoutonUpdate();
+    };
+
+    // Bouton Mettre à jour
+    const updateBtn = document.getElementById('apiConsoUpdateBtn');
+    const majInfo   = document.getElementById('apiConsoMajInfo');
+
+    function _majBoutonUpdate() {
+      if (!updateBtn) return;
+      const derniereMajStr = document.getElementById('apiConsoDerniereMaj').value;
+      if (!derniereMajStr) {
+        updateBtn.disabled = false;
+        if (majInfo) majInfo.textContent = 'Jamais mis à jour';
+        return;
+      }
+      const dernier  = new Date(derniereMajStr);
+      const maintenant = new Date();
+      const diffH = (maintenant - dernier) / 1000 / 3600;
+      const dateStr = dernier.toLocaleDateString('fr-FR', {day:'2-digit', month:'2-digit', year:'numeric'})
+                    + ' ' + dernier.toLocaleTimeString('fr-FR', {hour:'2-digit', minute:'2-digit'});
+      if (diffH < 24) {
+        updateBtn.disabled = true;
+        const restantH = Math.ceil(24 - diffH);
+        if (majInfo) majInfo.textContent = 'Mis à jour le ' + dateStr + ' — prochain dans ' + restantH + 'h';
+      } else {
+        updateBtn.disabled = false;
+        if (majInfo) majInfo.textContent = 'Dernière mise à jour : ' + dateStr;
+      }
+    }
+
+    if (updateBtn) {
+      updateBtn.addEventListener('click', async function () {
+        updateBtn.disabled = true;
+        updateBtn.textContent = 'En cours…';
+        try {
+          const res = await fetch('/api/trigger_update', {method: 'POST'});
+          const data = await res.json();
+          // Recharger les params pour obtenir la nouvelle derniere_maj
+          await new Promise(resolve => {
+            const script = document.createElement('script');
+            script.textContent = 'if(typeof chargerParamsScript==="function")chargerParamsScript("api_conso").then(arguments[0]);else arguments[0]();';
+            document.body.appendChild(script);
+            document.body.removeChild(script);
+            resolve();
+          });
+          if (typeof chargerParamsScript === 'function') {
+            await chargerParamsScript('api_conso');
+          }
+          if (typeof chargerContenuPrincipal === 'function') chargerContenuPrincipal();
+        } catch (e) {
+          if (majInfo) majInfo.textContent = 'Erreur réseau';
+        }
+        updateBtn.textContent = 'Mettre à jour';
+        _majBoutonUpdate();
+      });
+    }
+
+    // Lancer la vérification de l'état du bouton dès que le panel est peuplé
+    setTimeout(_majBoutonUpdate, 300);
+
+    // Import CSV
+    const dropZone = document.getElementById('apiConsoDropZone');
+    const fileInput = document.getElementById('apiConsoCsvInput');
+    const statusEl = document.getElementById('apiConsoImportStatus');
+
+    function setStatus(msg, ok) {
+      statusEl.textContent = msg;
+      statusEl.className = 'api-conso-import-status ' + (ok ? 'ok' : 'err');
+    }
+
+    function uploadFile(file) {
+      if (!file) return;
+      setStatus('Import en cours…', true);
+      const fd = new FormData();
+      fd.append('file', file);
+      fetch('/api/import_csv', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(data => {
+          if (data.status) {
+            setStatus(
+              data.data.importes + ' records importés (' + data.data.total + ' au total)',
+              true
+            );
+            // Rafraîchir l'affichage principal
+            if (typeof chargerContenuPrincipal === 'function') chargerContenuPrincipal();
+          } else {
+            setStatus('Erreur : ' + data.error, false);
+          }
+        })
+        .catch(e => setStatus('Erreur réseau : ' + e, false));
+    }
+
+    fileInput.addEventListener('change', () => uploadFile(fileInput.files[0]));
+
+    dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', e => {
+      e.preventDefault();
+      dropZone.classList.remove('drag-over');
+      uploadFile(e.dataTransfer.files[0]);
+    });
+  })();
+</script>

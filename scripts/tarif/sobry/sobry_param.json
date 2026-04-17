@@ -1,0 +1,200 @@
+{
+  "adresse": "https://api.sobry.co/api/prices/raw",
+  "commentaire": "Script Sobry — tarif dynamique EPEX Spot",
+  "puissance_souscrite": 6,
+  "granularity": "hourly",
+  "display": "TTC",
+  "turpe_actifs": [
+    "LU"
+  ],
+  "marge_ht": 0.008,
+  "marge_ttc": 0.0096,
+  "socap": {
+    "plafond_ete_ht": 0.1125,
+    "plafond_ete_ttc": 0.135,
+    "plafond_hiver_ht": 0.2167,
+    "plafond_hiver_ttc": 0.26,
+    "prime_ht": 0.007,
+    "prime_ttc": 0.0084
+  },
+  "soflex": {
+    "plafond_ete_ht": 0.3333,
+    "plafond_ete_ttc": 0.4,
+    "plafond_hiver_ht": 0.3333,
+    "plafond_hiver_ttc": 0.4,
+    "prime_ht": 0.002,
+    "prime_ttc": 0.0024
+  },
+  "tranches": [
+    {
+      "puissance": 3,
+      "abonnement": 9.53,
+      "extinction": false
+    },
+    {
+      "puissance": 4,
+      "abonnement": 10.53,
+      "extinction": false
+    },
+    {
+      "puissance": 5,
+      "abonnement": 11.52,
+      "extinction": false
+    },
+    {
+      "puissance": 6,
+      "abonnement": 12.52,
+      "extinction": false
+    },
+    {
+      "puissance": 7,
+      "abonnement": 13.52,
+      "extinction": false
+    },
+    {
+      "puissance": 8,
+      "abonnement": 14.51,
+      "extinction": false
+    },
+    {
+      "puissance": 9,
+      "abonnement": 15.51,
+      "extinction": false
+    },
+    {
+      "puissance": 10,
+      "abonnement": 16.51,
+      "extinction": false
+    },
+    {
+      "puissance": 11,
+      "abonnement": 17.5,
+      "extinction": false
+    },
+    {
+      "puissance": 12,
+      "abonnement": 18.5,
+      "extinction": false
+    },
+    {
+      "puissance": 13,
+      "abonnement": 19.5,
+      "extinction": false
+    },
+    {
+      "puissance": 14,
+      "abonnement": 20.49,
+      "extinction": false
+    },
+    {
+      "puissance": 15,
+      "abonnement": 21.49,
+      "extinction": false
+    },
+    {
+      "puissance": 16,
+      "abonnement": 23.79,
+      "extinction": false
+    },
+    {
+      "puissance": 17,
+      "abonnement": 26.1,
+      "extinction": false
+    },
+    {
+      "puissance": 18,
+      "abonnement": 28.4,
+      "extinction": false
+    },
+    {
+      "puissance": 19,
+      "abonnement": 28.9,
+      "extinction": false
+    },
+    {
+      "puissance": 20,
+      "abonnement": 29.4,
+      "extinction": false
+    },
+    {
+      "puissance": 21,
+      "abonnement": 29.9,
+      "extinction": false
+    },
+    {
+      "puissance": 22,
+      "abonnement": 30.39,
+      "extinction": false
+    },
+    {
+      "puissance": 23,
+      "abonnement": 30.89,
+      "extinction": false
+    },
+    {
+      "puissance": 24,
+      "abonnement": 31.39,
+      "extinction": false
+    },
+    {
+      "puissance": 25,
+      "abonnement": 33.57,
+      "extinction": false
+    },
+    {
+      "puissance": 26,
+      "abonnement": 35.75,
+      "extinction": false
+    },
+    {
+      "puissance": 27,
+      "abonnement": 37.93,
+      "extinction": false
+    },
+    {
+      "puissance": 28,
+      "abonnement": 40.1,
+      "extinction": false
+    },
+    {
+      "puissance": 29,
+      "abonnement": 42.28,
+      "extinction": false
+    },
+    {
+      "puissance": 30,
+      "abonnement": 44.46,
+      "extinction": false
+    },
+    {
+      "puissance": 31,
+      "abonnement": 45.78,
+      "extinction": false
+    },
+    {
+      "puissance": 32,
+      "abonnement": 47.1,
+      "extinction": false
+    },
+    {
+      "puissance": 33,
+      "abonnement": 48.43,
+      "extinction": false
+    },
+    {
+      "puissance": 34,
+      "abonnement": 49.75,
+      "extinction": false
+    },
+    {
+      "puissance": 35,
+      "abonnement": 51.07,
+      "extinction": false
+    },
+    {
+      "puissance": 36,
+      "abonnement": 52.39,
+      "extinction": false
+    }
+  ]
+}
