@@ -17,6 +17,7 @@ from zoneinfo import ZoneInfo
 logger = logging.getLogger("api_conso")
 
 TZ_PARIS = ZoneInfo("Europe/Paris")
+TZ_UTC   = ZoneInfo("UTC")
 BASE_DIR = Path(__file__).parent
 DATA_FILE = BASE_DIR / "api_conso_data.json"
 PARAM_FILE = BASE_DIR / "api_conso_param.json"
@@ -65,7 +66,7 @@ def _generer_mock_records(nb_jours: int = 7) -> list:
             kwh = round(valeur_base * coeff, 3)
             pmax = round(kwh * 2 * 1.5, 3)
             records.append({
-                "ts": ts.isoformat(),
+                "ts": ts.astimezone(TZ_UTC).isoformat(),
                 "kwh": kwh,
                 "pmax": pmax,
                 "type": "reel",
@@ -209,7 +210,7 @@ def _convertir_reponse_api(data: dict) -> list:
             kwh = round(valeur_w * 0.5 / 1000, 3)       # W → kWh sur 30 min
             pmax = round(valeur_w / 1000, 3)              # W → kW
             date_str = item.get("date", "")
-            dt = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=TZ_PARIS)
+            dt = datetime.strptime(date_str, "%Y-%m-%d %H:%M:%S").replace(tzinfo=TZ_PARIS).astimezone(TZ_UTC)
             records.append({
                 "ts": dt.isoformat(),
                 "kwh": kwh,
@@ -231,15 +232,30 @@ def cmd_get(params: dict, global_param: dict) -> dict:
     return _reponse(True, "GET", data=data)
 
 
+def _donnees_fraiches(param: dict, fraicheur_minutes: int = 60) -> bool:
+    """Retourne True si derniere_maj existe et date de moins de fraicheur_minutes."""
+    derniere_maj = (param or {}).get("derniere_maj")
+    if not derniere_maj:
+        return False
+    try:
+        dt = datetime.fromisoformat(derniere_maj)
+        age = (datetime.now(TZ_PARIS) - dt).total_seconds() / 60
+        return age < fraicheur_minutes
+    except Exception:
+        return False
+
+
 def cmd_update(params: dict, global_param: dict) -> dict:
     """Met à jour api_conso_data.json : mock si pas de token, appel réel sinon."""
     param = _lire_param()
     token = param.get("token") if param else None
     adresse = (param or {}).get("adresse", "https://conso.boris.sh/api/")
     donnees_existantes = _lire_data()
+    nb_jours = max(1, min(int((param or {}).get("nb_jours") or 7), 60))
+    fraicheur = int((param or {}).get("fraicheur_minutes", 60))
+    force = params.get("force", False)
 
     # ── Mode mock : aucun token configuré ────────────────────────────────────
-    nb_jours = max(1, min(int((param or {}).get("nb_jours") or 7), 60))
     if not token:
         records = _generer_mock_records(nb_jours)
         nouvelles_donnees = {"records": records, "mock": True}
@@ -247,6 +263,11 @@ def cmd_update(params: dict, global_param: dict) -> dict:
         _maj_timestamps_param("démo (token absent)")
         logger.info("API conso UPDATE : mode mock (%d records)", len(records))
         return _reponse(True, "UPDATE", data=nouvelles_donnees)
+
+    # ── Données déjà fraîches : pas d'appel HTTP ─────────────────────────────
+    if not force and donnees_existantes and _donnees_fraiches(param, fraicheur):
+        logger.info("API conso UPDATE : données fraîches (%d min), pas d'appel API", fraicheur)
+        return _reponse(True, "UPDATE", data=donnees_existantes)
 
     # ── Mode réel : appel HTTP ────────────────────────────────────────────────
     mode_erreur = params.get("simulate_error")  # "timeout" | "http500" | None
@@ -317,6 +338,7 @@ def cmd_init_param(params: dict, global_param: dict) -> dict:
         "token": None,
         "prm": None,
         "nb_jours": 7,
+        "fraicheur_minutes": 60,
         "auto_refresh": False,
         "derniere_maj": None,
         "prochaine_maj": None,
@@ -352,6 +374,33 @@ def cmd_get_history_start(params: dict, global_param: dict) -> dict:
     global_param["max_history_start"] = date_historique
     logger.info("API conso GET_HISTORY_START : date historique = %s", date_historique)
     return _reponse(True, "GET_HISTORY_START", data={"max_history_start": date_historique})
+
+
+def cmd_get_data(params: dict, global_param: dict) -> dict:
+    """Retourne les données api_conso (records + mock flag). Les masques sont dans GET_MASKS."""
+    data = _lire_data()
+    if data is None:
+        return _reponse(False, "GET_DATA", error="Fichier data absent")
+
+    return _reponse(True, "GET_DATA", data={
+        "records": data.get("records", []),
+        "mock":    data.get("mock", False),
+    })
+
+
+def cmd_get_masks(params: dict, global_param: dict) -> dict:
+    """Retourne les masques HTML du module (tableau_titre, tableau_ligne, params)."""
+    tpl_dir = BASE_DIR / "templates"
+    panel   = BASE_DIR / "api_conso_panel.html"
+
+    def _lire(chemin: Path) -> str:
+        return chemin.read_text(encoding="utf-8") if chemin.exists() else ""
+
+    return _reponse(True, "GET_MASKS", data={
+        "tableau_titre": _lire(tpl_dir / "tableau_titre.html"),
+        "tableau_ligne": _lire(tpl_dir / "tableau_ligne.html"),
+        "params":        _lire(panel),
+    })
 
 
 def cmd_import_csv(params: dict, global_param: dict) -> dict:
@@ -392,7 +441,7 @@ def cmd_import_csv(params: dict, global_param: dict) -> dict:
             # Timestamp : ajouter :00 si pas de secondes, puis timezone Paris
             if len(ts_str) == 16:   # "2024-04-19T00:00"
                 ts_str += ":00"
-            dt = datetime.fromisoformat(ts_str).replace(tzinfo=TZ_PARIS)
+            dt = datetime.fromisoformat(ts_str).replace(tzinfo=TZ_PARIS).astimezone(TZ_UTC)
             ts_key = dt.isoformat()
             nouveaux[ts_key] = {
                 "ts": ts_key,
@@ -451,13 +500,15 @@ def cmd_import_csv(params: dict, global_param: dict) -> dict:
 # ─── Point d'entrée du script ─────────────────────────────────────────────────
 
 COMMANDES = {
-    "GET": cmd_get,
-    "UPDATE": cmd_update,
-    "GET_PARAM": cmd_get_param,
-    "SET_PARAM": cmd_set_param,
-    "INIT_PARAM": cmd_init_param,
+    "GET":               cmd_get,
+    "UPDATE":            cmd_update,
+    "GET_PARAM":         cmd_get_param,
+    "SET_PARAM":         cmd_set_param,
+    "INIT_PARAM":        cmd_init_param,
     "GET_HISTORY_START": cmd_get_history_start,
-    "IMPORT_CSV": cmd_import_csv,
+    "IMPORT_CSV":        cmd_import_csv,
+    "GET_DATA":          cmd_get_data,
+    "GET_MASKS":         cmd_get_masks,
 }
 
 

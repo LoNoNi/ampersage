@@ -182,4 +182,6 @@ Ce disclaimer est affiché au lancement de l'application. L'utilisateur doit cli
 - [ ] Graphiques de consommation
 - [ ] Export PDF / CSV
 - [ ] Module Voiture électrique (coût de recharge)
+- [ ] Module Panneaux solaires (estimation production et impact sur facture)
+- [ ] Module Chauffe-eau (évaluation impact sur facture et optimisation HC/HP)
 - [ ] Connexion à l'API Enedis officielle

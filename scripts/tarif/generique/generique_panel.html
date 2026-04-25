@@ -1,0 +1,389 @@
+<style>
+  .gen-panel {
+    font-family: inherit;
+  }
+
+  .gen-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e8f0fe;
+  }
+
+  .gen-logo {
+    background: #1a73e8;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 900;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+  }
+
+  .gen-brand-desc {
+    color: #888;
+    font-size: 0.85rem;
+  }
+
+  .gen-section {
+    margin-bottom: 1.5rem;
+  }
+
+  .gen-section-title {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #999;
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+    margin-bottom: 0.75rem;
+  }
+
+  .gen-global-grid {
+    display: grid;
+    grid-template-columns: 180px 1fr;
+    gap: 0.5rem 1rem;
+    align-items: center;
+    max-width: 520px;
+  }
+
+  .gen-global-label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #555;
+  }
+
+  .gen-global-field {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .gen-input-num {
+    width: 70px;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.9rem;
+    font-family: inherit;
+    text-align: right;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .gen-input-num:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+  }
+
+  .gen-input-text {
+    flex: 1;
+    max-width: 300px;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .gen-input-text:focus {
+    border-color: #1a73e8;
+    box-shadow: 0 0 0 2px rgba(26,115,232,0.15);
+  }
+
+  .gen-select {
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.85rem;
+    font-family: inherit;
+    outline: none;
+    background: white;
+    cursor: pointer;
+  }
+
+  .gen-select:focus {
+    border-color: #1a73e8;
+  }
+
+  .gen-unit {
+    font-size: 0.78rem;
+    color: #999;
+  }
+
+  /* Tableau des offres hphc */
+  .gen-hc-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+  }
+
+  .gen-hc-table th {
+    background: #f5f5f5;
+    color: #444;
+    font-weight: 700;
+    padding: 0.5rem 0.75rem;
+    text-align: left;
+    border-bottom: 2px solid #ddd;
+    white-space: nowrap;
+  }
+
+  .gen-hc-table td {
+    padding: 0.45rem 0.75rem;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+  }
+
+  .gen-hc-table tr:hover td {
+    background: #fafafa;
+  }
+
+  .gen-badge-source {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 4px;
+    margin-left: 0.4rem;
+  }
+
+  .gen-badge-source.generique {
+    background: #e8f0fe;
+    color: #1a73e8;
+  }
+
+  .gen-badge-source.dédié {
+    background: #fce8ff;
+    color: #9c27b0;
+  }
+
+  .gen-offre-nom {
+    font-weight: 600;
+    color: #333;
+  }
+
+  .gen-offre-fournisseur {
+    font-size: 0.78rem;
+    color: #888;
+  }
+
+  .gen-plage-perso-wrap {
+    display: none;
+    margin-top: 0.35rem;
+  }
+
+  .gen-plage-perso-wrap.visible {
+    display: block;
+  }
+
+  .gen-plage-retenue {
+    font-size: 0.75rem;
+    color: #aaa;
+    margin-top: 0.3rem;
+    font-style: italic;
+  }
+
+  .gen-empty-msg {
+    color: #aaa;
+    font-size: 0.85rem;
+    font-style: italic;
+    padding: 0.5rem 0;
+  }
+</style>
+
+<div class="gen-panel">
+
+  <div class="gen-brand">
+    <span class="gen-logo">⚡</span>
+    <span class="gen-brand-desc">Tarifs Génériques — Multi-fournisseurs</span>
+  </div>
+
+  <!-- Paramètres globaux -->
+  <div class="gen-section">
+    <div class="gen-section-title">Paramètres globaux</div>
+    <div class="gen-global-grid">
+
+      <span class="gen-global-label">Puissance souscrite</span>
+      <div class="gen-global-field">
+        <input type="number" id="gen-kva" class="gen-input-num" min="3" max="36" step="1" value="6" />
+        <span class="gen-unit">kVA</span>
+      </div>
+
+      <span class="gen-global-label">Mode prix</span>
+      <div class="gen-global-field">
+        <select id="gen-mode-prix" class="gen-select">
+          <option value="ttc">TTC</option>
+          <option value="ht">HT</option>
+        </select>
+      </div>
+
+      <span class="gen-global-label">Plage HC globale</span>
+      <div class="gen-global-field">
+        <input type="text" id="gen-plage-globale" class="gen-input-text"
+               value="22h00→6h00 + 12h00→14h00"
+               placeholder="ex: 22h00→6h00 + 12h00→14h00" />
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Configuration plage HC par offre hphc -->
+  <div class="gen-section" id="gen-hc-section">
+    <div class="gen-section-title">Plage heures creuses par offre HC/HP</div>
+    <div id="gen-hc-list">
+      <p class="gen-empty-msg">Aucune offre HC/HP connue — lancez un UPDATE pour scanner les tarifs.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+
+  // ─── Construit la ligne de config HC pour une offre hphc ─────────────────
+  function construireLigneHc(cle, meta, config) {
+    var mode        = (config && config.mode)        || 'globale';
+    var plagePerso  = (config && config.plage_perso) || '';
+    var plageRetenu = (config && config.plage_retenue) || '';
+    var hasTarif    = !!(meta.plage_hc_tarif);
+
+    var tr = document.createElement('tr');
+    tr.dataset.cle = cle;
+
+    // Colonne fournisseur / offre
+    var tdNom = document.createElement('td');
+    tdNom.innerHTML =
+      '<div class="gen-offre-nom">' + _esc(meta.nom) +
+        '<span class="gen-badge-source ' + _esc(meta.source) + '">' + _esc(meta.source) + '</span>' +
+      '</div>' +
+      '<div class="gen-offre-fournisseur">' + _esc(meta.fournisseur) + '</div>';
+
+    // Colonne sélecteur de mode
+    var tdMode = document.createElement('td');
+    var optTarif = hasTarif
+      ? '<option value="tarif"' + (mode === 'tarif' ? ' selected' : '') + '>Plage du tarif</option>'
+      : '';
+    tdMode.innerHTML =
+      '<select class="gen-select gen-mode-select">' +
+        '<option value="globale"' + (mode === 'globale' ? ' selected' : '') + '>Globale</option>' +
+        optTarif +
+        '<option value="perso"' + (mode === 'perso' ? ' selected' : '') + '>Personnalisée</option>' +
+      '</select>' +
+      '<div class="gen-plage-perso-wrap' + (mode === 'perso' ? ' visible' : '') + '">' +
+        '<input type="text" class="gen-input-text gen-plage-perso"' +
+               ' value="' + _esc(plagePerso) + '"' +
+               ' placeholder="ex: 22h00→6h00" />' +
+      '</div>' +
+      (plageRetenu
+        ? '<div class="gen-plage-retenue">Retenue : ' + _esc(plageRetenu) + '</div>'
+        : '');
+
+    tr.appendChild(tdNom);
+    tr.appendChild(tdMode);
+
+    // Afficher/masquer le champ perso au changement de mode
+    var sel   = tdMode.querySelector('.gen-mode-select');
+    var wrap  = tdMode.querySelector('.gen-plage-perso-wrap');
+    sel.addEventListener('change', function () {
+      wrap.classList.toggle('visible', this.value === 'perso');
+    });
+
+    return tr;
+  }
+
+  // ─── Peuple le tableau des offres hphc ────────────────────────────────────
+  function construireTableauHc(index, offresPlageHc) {
+    var container = document.getElementById('gen-hc-list');
+    container.innerHTML = '';
+
+    var offresHphc = Object.keys(index).filter(function (cle) {
+      return index[cle].type === 'hphc';
+    });
+
+    if (offresHphc.length === 0) {
+      container.innerHTML =
+        '<p class="gen-empty-msg">Aucune offre HC/HP connue — lancez un UPDATE pour scanner les tarifs.</p>';
+      return;
+    }
+
+    var table = document.createElement('table');
+    table.className = 'gen-hc-table';
+    table.innerHTML =
+      '<thead><tr>' +
+        '<th>Offre</th>' +
+        '<th>Plage heures creuses</th>' +
+      '</tr></thead>';
+    var tbody = document.createElement('tbody');
+
+    offresHphc.forEach(function (cle) {
+      var meta   = index[cle];
+      var config = offresPlageHc ? offresPlageHc[cle] : null;
+      tbody.appendChild(construireLigneHc(cle, meta, config));
+    });
+
+    table.appendChild(tbody);
+    container.appendChild(table);
+  }
+
+  // ─── Collecteur ───────────────────────────────────────────────────────────
+  window.getParams_generique = function () {
+    var kva        = document.getElementById('gen-kva');
+    var modePrix   = document.getElementById('gen-mode-prix');
+    var plageGlob  = document.getElementById('gen-plage-globale');
+
+    var offresPlageHc = {};
+    document.querySelectorAll('#gen-hc-list tr[data-cle]').forEach(function (tr) {
+      var cle  = tr.dataset.cle;
+      var sel  = tr.querySelector('.gen-mode-select');
+      var perso = tr.querySelector('.gen-plage-perso');
+      if (!sel) return;
+      offresPlageHc[cle] = {
+        mode:        sel.value,
+        plage_perso: perso ? perso.value : '',
+      };
+    });
+
+    return {
+      puissance_souscrite: kva      ? parseInt(kva.value)     : 6,
+      mode_prix:           modePrix ? modePrix.value          : 'ttc',
+      plage_hc_globale:    plageGlob ? plageGlob.value        : '22h00\u21926h00 + 12h00\u219214h00',
+      offres_plage_hc:     offresPlageHc,
+    };
+  };
+
+  // ─── Setter ───────────────────────────────────────────────────────────────
+  window.setParams_generique = function (data) {
+    if (!data) return;
+
+    var kva = document.getElementById('gen-kva');
+    if (kva && data.puissance_souscrite != null) kva.value = data.puissance_souscrite;
+
+    var modePrix = document.getElementById('gen-mode-prix');
+    if (modePrix && data.mode_prix) modePrix.value = data.mode_prix;
+
+    var plageGlob = document.getElementById('gen-plage-globale');
+    if (plageGlob && data.plage_hc_globale) plageGlob.value = data.plage_hc_globale;
+
+    // Reconstruire le tableau HC si l'index est disponible
+    if (data._index) {
+      construireTableauHc(data._index, data.offres_plage_hc || {});
+    }
+  };
+
+  // ─── Utilitaire d'échappement HTML ────────────────────────────────────────
+  function _esc(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  // Initialisation vide (le setter sera appelé par app.js après GET_PARAM)
+  construireTableauHc({}, {});
+
+})();
+</script>

@@ -6,8 +6,11 @@ Expose les routes API et sert les fichiers statiques de l'IHM.
 import importlib.util
 import json
 import logging
+import subprocess
 import threading
 import time
+import urllib.request
+import urllib.error
 from datetime import datetime
 from pathlib import Path
 from zoneinfo import ZoneInfo
@@ -19,12 +22,113 @@ logger = logging.getLogger("server")
 BASE_DIR = Path(__file__).parent
 WEB_DIR = BASE_DIR / "web"
 SCRIPTS_DIR = BASE_DIR / "scripts"
+MODULES_COMP_DIR = BASE_DIR / "modules_complementaires"
+DATA_DIR = BASE_DIR / "data"
 PARAMS_FILE = BASE_DIR / "parametres.json"
+VERSION_CHECK_FILE = BASE_DIR / "version_check.json"
+GITHUB_REPO = "LoNoNi/ampersage"
 
-# Référence à Global_param injectée au démarrage
+# Modules tarif dépréciés : migrés vers generique, ignorés partout
+SCRIPTS_DEPRECIES = {"sobry", "trv_base", "trv_hchp", "trv_tempo"}
+
+
+def _decouvrir_scripts_tarif() -> list:
+    """Retourne la liste des noms de scripts tarif actifs dans scripts/tarif/."""
+    tarif_dir = SCRIPTS_DIR / "tarif"
+    if not tarif_dir.exists():
+        return []
+    scripts = []
+    for sous_dir in sorted(tarif_dir.iterdir()):
+        if not sous_dir.is_dir():
+            continue
+        nom = sous_dir.name
+        if nom.startswith("_") or nom in SCRIPTS_DEPRECIES:
+            continue
+        if (sous_dir / f"{nom}.py").exists():
+            scripts.append(nom)
+    return scripts
+
+# Référence à Global_param et callbacks injectés au démarrage par orchestrator.py
 _global_param: dict = {}
+_get_data_fn = None
+_relancer_pipeline_fn = None
+_relancer_tarifs_fn = None
+_importer_csv_fn = None
 
 app = Flask(__name__, static_folder=str(WEB_DIR))
+
+
+# ─── Gestion des versions ─────────────────────────────────────────────────────
+
+
+def _lire_version_courante() -> str:
+    """Retourne la version courante depuis le tag git le plus récent."""
+    try:
+        result = subprocess.run(
+            ["git", "describe", "--tags", "--abbrev=0"],
+            cwd=str(BASE_DIR),
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0:
+            return result.stdout.strip().lstrip("v")
+    except Exception:
+        pass
+    return "0.0.0"
+
+
+def _comparer_versions(v1: str, v2: str) -> int:
+    """Retourne 1 si v2 > v1, 0 si égaux, -1 si v2 < v1."""
+    try:
+        t1 = tuple(int(x) for x in v1.split("."))
+        t2 = tuple(int(x) for x in v2.split("."))
+        if t2 > t1:
+            return 1
+        if t2 < t1:
+            return -1
+        return 0
+    except Exception:
+        return 0
+
+
+def _verifier_version_github() -> dict:
+    """Interroge l'API GitHub Releases pour la dernière version disponible."""
+    TZ = ZoneInfo("Europe/Paris")
+    try:
+        url = "https://api.github.com/repos/{}/releases/latest".format(GITHUB_REPO)
+        req = urllib.request.Request(url, headers={"User-Agent": "ampersage-updater"})
+        with urllib.request.urlopen(req, timeout=10) as resp:
+            data = json.loads(resp.read().decode())
+        tag = data.get("tag_name", "").lstrip("v")
+        return {
+            "latest": tag,
+            "changelog_url": data.get("html_url", ""),
+            "checked_at": datetime.now(TZ).isoformat(),
+            "error": None,
+        }
+    except Exception as exc:
+        return {
+            "latest": None,
+            "changelog_url": "",
+            "checked_at": datetime.now(TZ).isoformat(),
+            "error": str(exc),
+        }
+
+
+def _lire_version_check() -> dict:
+    if VERSION_CHECK_FILE.exists():
+        try:
+            with open(VERSION_CHECK_FILE, encoding="utf-8") as f:
+                return json.load(f)
+        except Exception:
+            pass
+    return {}
+
+
+def _ecrire_version_check(data: dict):
+    with open(VERSION_CHECK_FILE, "w", encoding="utf-8") as f:
+        json.dump(data, f, ensure_ascii=False, indent=2)
 
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -39,6 +143,7 @@ def _charger_script(nom_script: str):
         SCRIPTS_DIR / nom_script / f"{nom_script}.py",
         SCRIPTS_DIR / "tarif" / nom_script / f"{nom_script}.py",
         SCRIPTS_DIR / "api_conso" / f"{nom_script}.py",
+        MODULES_COMP_DIR / nom_script / f"{nom_script}.py",
     ]
     for chemin in candidats:
         if chemin.exists():
@@ -57,113 +162,33 @@ def _sauvegarder_params():
     logger.info("parametres.json sauvegardé")
 
 
+def _statut_eco2mix() -> str:
+    """Retourne le statut du module éCO2mix (lecture fichier JSON uniquement)."""
+    try:
+        fichier = MODULES_COMP_DIR / "eco2mix" / "eco2mix.py"
+        if not fichier.exists():
+            return "module introuvable"
+        donnees_file = MODULES_COMP_DIR / "eco2mix" / "data" / "eco2mix_donnees.json"
+        if not donnees_file.exists():
+            return "non initialisé"
+        with open(donnees_file, "r", encoding="utf-8") as f:
+            donnees = json.load(f)
+        if not donnees:
+            return "vide"
+        return "actif"
+    except Exception:
+        return "erreur"
+
+
 def _statuts_scripts() -> dict:
     """Construit la section 'scripts' de /api/status."""
-    noms = ["sobry", "trv_base", "trv_hchp", "trv_tempo"]
-    api_conso_actif = _global_param.get("api_conso_statut", False)
-    result = {}
-    for nom in noms:
-        if not api_conso_actif:
-            result[nom] = "non initialisé"
-        else:
-            result[nom] = _global_param.get(f"{nom}_STATUT", "non initialisé")
-    return result
+    if not _global_param.get("api_conso_statut", False):
+        return {nom: "non initialisé" for nom in _decouvrir_scripts_tarif()}
+    return {
+        nom: _global_param.get(f"{nom}_STATUT", "non initialisé")
+        for nom in _decouvrir_scripts_tarif()
+    }
 
-
-def _relancer_pipeline():
-    """
-    Relance le pipeline complet : API conso UPDATE puis scripts tarif.
-    Appelé après chaque sauvegarde de paramètres.
-    """
-    scripts_tarif = ["sobry", "trv_base", "trv_hchp", "trv_tempo"]
-
-    # API conso
-    module_api_conso = _charger_script("api_conso")
-    if module_api_conso is None:
-        logger.error("Pipeline : script API conso introuvable")
-        _global_param["api_conso_statut"] = False
-        _global_param["api_conso_STATUT"] = "erreur"
-        return
-
-    logger.info("Pipeline : appel API conso UPDATE")
-    try:
-        reponse = module_api_conso.run(mode="UPDATE", params={}, global_param=_global_param)
-    except Exception as exc:
-        logger.error("Pipeline : exception API conso → %s", exc)
-        _global_param["api_conso_statut"] = False
-        _global_param["api_conso_STATUT"] = "erreur"
-        _global_param["api_conso_mode"] = "erreur"
-        _global_param["api_conso_message"] = "Erreur inattendue : {}".format(exc)
-        return
-
-    data = reponse.get("data", {})
-
-    if reponse.get("status"):
-        _global_param["api_conso_statut"] = True
-        _global_param.setdefault("DATA", {})["api_conso"] = data
-        if data.get("mock"):
-            _global_param["api_conso_STATUT"] = "mock"
-            _global_param["api_conso_mode"] = "mock"
-            _global_param["api_conso_message"] = (
-                "Aucun token configuré — données de démonstration affichées. "
-                "Renseignez votre token dans le panneau API Conso pour accéder à vos vraies données."
-            )
-            logger.info("Pipeline : API conso mode mock")
-        else:
-            _global_param["api_conso_STATUT"] = "actif"
-            _global_param["api_conso_mode"] = "reel"
-            _global_param["api_conso_message"] = None
-            logger.info("Pipeline : API conso données réelles")
-    else:
-        erreur = reponse.get("error", "erreur inconnue")
-        _global_param["api_conso_statut"] = False
-        _global_param["api_conso_STATUT"] = "erreur"
-        _global_param["api_conso_mode"] = "erreur"
-        _global_param["api_conso_message"] = "Erreur API : {}".format(erreur)
-        # Conserver les données mémorisées si disponibles
-        if data:
-            _global_param.setdefault("DATA", {})["api_conso"] = data
-        logger.warning("Pipeline : API conso en erreur → %s", erreur)
-        return
-
-    # Scripts tarif (indépendants)
-    for nom in scripts_tarif:
-        module = _charger_script(nom)
-        if module is None:
-            _global_param[f"{nom}_STATUT"] = "erreur"
-            continue
-        try:
-            rep = module.run(mode="UPDATE", params={}, global_param=_global_param)
-            if rep.get("status"):
-                _global_param[f"{nom}_STATUT"] = "actif"
-                _global_param["DATA"][nom] = rep.get("data", {})
-                logger.info("Pipeline : %s actif", nom)
-            else:
-                _global_param[f"{nom}_STATUT"] = "erreur"
-                logger.warning("Pipeline : %s en erreur → %s", nom, rep.get("error"))
-        except Exception as exc:
-            _global_param[f"{nom}_STATUT"] = "erreur"
-            logger.error("Pipeline : exception %s → %s", nom, exc)
-
-
-def _relancer_tarifs():
-    """Relance uniquement les scripts tarif, sans rappeler l'API conso."""
-    for nom in ["sobry", "trv_base", "trv_hchp", "trv_tempo"]:
-        module = _charger_script(nom)
-        if module is None:
-            _global_param[f"{nom}_STATUT"] = "erreur"
-            continue
-        try:
-            rep = module.run(mode="UPDATE", params={}, global_param=_global_param)
-            if rep.get("status"):
-                _global_param[f"{nom}_STATUT"] = "actif"
-                _global_param["DATA"][nom] = rep.get("data", {})
-            else:
-                _global_param[f"{nom}_STATUT"] = "erreur"
-                logger.warning("Tarif %s en erreur → %s", nom, rep.get("error"))
-        except Exception as exc:
-            _global_param[f"{nom}_STATUT"] = "erreur"
-            logger.error("Exception tarif %s → %s", nom, exc)
 
 
 def _statut_global() -> str:
@@ -172,7 +197,7 @@ def _statut_global() -> str:
         return "erreur"
     statuts = [
         _global_param.get(f"{nom}_STATUT", "non initialisé")
-        for nom in ["sobry", "trv_base", "trv_hchp", "trv_tempo"]
+        for nom in _decouvrir_scripts_tarif()
     ]
     if any(s == "erreur" for s in statuts):
         return "erreur"
@@ -186,6 +211,7 @@ def _trouver_panel(nom_script: str):
     candidats = [
         SCRIPTS_DIR / nom_script / f"{nom_script}_panel.html",
         SCRIPTS_DIR / "tarif" / nom_script / f"{nom_script}_panel.html",
+        MODULES_COMP_DIR / nom_script / f"{nom_script}_panel.html",
     ]
     for chemin in candidats:
         if chemin.exists():
@@ -197,9 +223,37 @@ def _trouver_panel(nom_script: str):
 
 
 @app.route("/")
+@app.route("/debug")
 def index():
-    """Sert la page principale."""
+    """Sert la page principale (mode debug si accès via /debug)."""
     return send_from_directory(str(WEB_DIR), "index.html")
+
+
+_DATA_FILES_AUTORISES = {"manifest.json", "masques.json", "params.json",
+                         "api_conso.json", "eco2mix.json",
+                         "api_conso_records.ndjson"}
+
+_MIMETYPES = {
+    "api_conso_records.ndjson": "application/x-ndjson",
+}
+_MIMETYPE_NDJSON = "application/x-ndjson"
+
+
+@app.route("/data/<fichier>", methods=["GET"])
+def data_fichier(fichier: str):
+    """Sert les fichiers JSON du pipeline (manifest, masques, params, api_conso, eco2mix, tarifs)."""
+    autorise = (
+        fichier in _DATA_FILES_AUTORISES
+        or (fichier.startswith("tarif_") and fichier.endswith(".ndjson"))
+    )
+    if not autorise:
+        return jsonify({"error": "Fichier non autorisé"}), 403
+    chemin = DATA_DIR / fichier
+    if not chemin.exists():
+        return jsonify({"error": "Fichier non disponible — pipeline en attente"}), 503
+    mimetype = _MIMETYPES.get(fichier,
+                 _MIMETYPE_NDJSON if fichier.endswith(".ndjson") else "application/json")
+    return send_from_directory(str(DATA_DIR), fichier, mimetype=mimetype)
 
 
 @app.route("/api/panel/<nom_script>", methods=["GET"])
@@ -222,15 +276,17 @@ def api_status():
     """Retourne les statuts en temps réel."""
     return jsonify({
         "global": _statut_global(),
+        "data_ready": bool(_get_data_fn and _get_data_fn()),
         "api_conso": _global_param.get("api_conso_STATUT", "non initialisé"),
         "scripts": _statuts_scripts(),
+        "modules": {"eco2mix": _statut_eco2mix()},
     })
 
 
 @app.route("/api/results", methods=["GET"])
 def api_results():
-    """Retourne Global_param.DATA."""
-    return jsonify(_global_param.get("DATA", {}))
+    """Retourne DATA complet (via orchestrateur) ou {} si pipeline incomplet."""
+    return jsonify(_get_data_fn() if _get_data_fn else {})
 
 
 @app.route("/api/script", methods=["POST"])
@@ -274,13 +330,14 @@ def api_save_params():
     if groupe == "global":
         _global_param.update(params)
         _sauvegarder_params()
-        _relancer_pipeline()
+        if _relancer_pipeline_fn:
+            _relancer_pipeline_fn()
         return jsonify({"status": True, "data": params})
 
     # Groupe script : appelle SET_PARAM
     module = _charger_script(groupe)
     if module is None:
-        return jsonify({"status": False, "error": f"Script '{groupe}' introuvable"}), 404
+        return jsonify({"status": False, "error": "Script '{}' introuvable".format(groupe)}), 404
 
     try:
         reponse = module.run(mode="SET_PARAM", params=params, global_param=_global_param)
@@ -290,7 +347,8 @@ def api_save_params():
 
     if reponse.get("status"):
         _sauvegarder_params()
-        _relancer_pipeline()
+        if _relancer_pipeline_fn:
+            _relancer_pipeline_fn()
 
     return jsonify(reponse)
 
@@ -298,100 +356,164 @@ def api_save_params():
 @app.route("/api/trigger_update", methods=["POST"])
 def api_trigger_update():
     """Déclenche manuellement une mise à jour API conso + recalcul des tarifs."""
-    _relancer_pipeline()
+    if _relancer_pipeline_fn:
+        _relancer_pipeline_fn()
     return jsonify({
-        "status": _global_param.get("api_conso_statut", False),
-        "statut": _global_param.get("api_conso_STATUT"),
+        "status":  _global_param.get("api_conso_statut", False),
+        "statut":  _global_param.get("api_conso_STATUT"),
         "message": _global_param.get("api_conso_message"),
     })
 
 
 @app.route("/api/import_csv", methods=["POST"])
 def api_import_csv():
-    """Reçoit un fichier CSV Enedis et l'importe via api_conso IMPORT_CSV."""
+    """Reçoit un fichier CSV Enedis et l'importe via l'orchestrateur."""
     if "file" not in request.files:
         return jsonify({"status": False, "error": "Fichier manquant"}), 400
 
     fichier = request.files["file"]
     try:
-        # utf-8-sig pour gérer le BOM éventuel
-        contenu = fichier.read().decode("utf-8-sig")
+        contenu = fichier.read().decode("utf-8-sig")  # utf-8-sig gère le BOM éventuel
     except Exception as exc:
         return jsonify({"status": False, "error": "Impossible de lire le fichier : {}".format(exc)}), 400
 
-    module = _charger_script("api_conso")
-    if module is None:
-        return jsonify({"status": False, "error": "Script api_conso introuvable"}), 404
+    if not _importer_csv_fn:
+        return jsonify({"status": False, "error": "Orchestrateur non initialisé"}), 503
 
-    reponse = module.run(mode="IMPORT_CSV", params={"csv_content": contenu}, global_param=_global_param)
-
-    if reponse.get("status"):
-        data = reponse.get("data", {})
-        _global_param.setdefault("DATA", {})["api_conso"] = data
-        _global_param["api_conso_statut"] = True
-        _global_param["api_conso_mode"] = "reel" if not data.get("mock") else "mock"
-        _global_param["api_conso_message"] = None
-        _relancer_tarifs()
-        logger.info("Import CSV : %d records importés, total %d",
-                    data.get("importes", 0), data.get("total", 0))
-
+    reponse = _importer_csv_fn(contenu)
     return jsonify(reponse)
 
 
-@app.route("/api/main", methods=["GET"])
-def api_main():
-    """Exécute main.py et retourne le HTML produit."""
-    main_path = BASE_DIR / "main.py"
-    if not main_path.exists():
-        return jsonify({"status": False, "error": "main.py introuvable"}), 404
+@app.route("/api/version", methods=["GET"])
+def api_version():
+    """Retourne la version courante et la dernière disponible sur GitHub."""
+    courante = _lire_version_courante()
+    check = _lire_version_check()
+    latest = check.get("latest")
+    update_available = False
+    if latest:
+        update_available = _comparer_versions(courante, latest) > 0
+    return jsonify({
+        "current": courante,
+        "latest": latest,
+        "update_available": update_available,
+        "changelog_url": check.get("changelog_url", ""),
+        "checked_at": check.get("checked_at"),
+        "error": check.get("error"),
+        "server_path": str(BASE_DIR),
+    })
 
-    spec = importlib.util.spec_from_file_location("main", main_path)
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
 
-    html = module.run(_global_param)
-    return jsonify({"status": True, "html": html})
+
+
+@app.route("/api/eco2mix_creneaux", methods=["GET"])
+def api_eco2mix_creneaux():
+    """Retourne les créneaux éCO2mix pour le client JS (infobulles)."""
+    data = _get_data_fn() if _get_data_fn else {}
+    creneaux = data.get("eco2mix", {}).get("creneaux", {})
+    return jsonify(creneaux)
+
+
+@app.route("/api/expose", methods=["GET"])
+def api_expose():
+    """
+    Expose la configuration et l'état des modules.
+    Structure : { fournisseurs: {...}, modules_complementaires: {...} }
+    """
+    # ── Fournisseurs (tarifs + api_conso) ─────────────────────────────────────
+    fournisseurs = {}
+    for nom in ["api_conso"] + _decouvrir_scripts_tarif():
+        module = _charger_script(nom)
+        if module is None:
+            fournisseurs[nom] = {"statut": "introuvable"}
+            continue
+        try:
+            rep_param = module.run(mode="GET_PARAM", params={}, global_param=_global_param)
+            fournisseurs[nom] = {
+                "statut": _global_param.get(f"{nom}_STATUT", "non initialisé"),
+                "parametres": rep_param.get("data", {}),
+            }
+        except Exception as exc:
+            fournisseurs[nom] = {"statut": "erreur", "erreur": str(exc)}
+
+    # ── Modules complémentaires ───────────────────────────────────────────────
+    modules_comp = {}
+
+    # eco2mix
+    eco2mix_mod = _charger_script("eco2mix")
+    if eco2mix_mod is not None:
+        try:
+            rep_get    = eco2mix_mod.run(mode="GET",      params={}, global_param=_global_param)
+            rep_param  = eco2mix_mod.run(mode="GET_PARAM", params={}, global_param=_global_param)
+            rep_stats  = eco2mix_mod.run(mode="GET_STATS", params={}, global_param=_global_param)
+            donnee     = rep_get.get("data", {})
+            co2_moyen  = (donnee.get("co2_moyen") or {}).get("taux_gco2_kwh")
+            co2_marg   = (donnee.get("co2_marginal") or {}).get("taux_gco2_kwh")
+            statut     = "actif" if rep_get.get("status") else "vide"
+            modules_comp["eco2mix"] = {
+                "statut":               statut,
+                "description":          "Mix électrique national et CO2 en temps réel (RTE éCO2mix)",
+                "note_methodes":        "CO2 moyen = taux officiel RTE / CO2 marginal = calcul AmperSage",
+                "parametres":           rep_param.get("data", {}),
+                "base_locale":          rep_stats.get("data", {}),
+                "taux_co2_moyen_actuel":    co2_moyen,
+                "taux_co2_marginal_actuel": co2_marg,
+            }
+        except Exception as exc:
+            modules_comp["eco2mix"] = {"statut": "erreur", "erreur": str(exc)}
+    else:
+        modules_comp["eco2mix"] = {"statut": "module introuvable"}
+
+    return jsonify({"fournisseurs": fournisseurs, "modules_complementaires": modules_comp})
+
 
 
 # ─── Lancement ────────────────────────────────────────────────────────────────
 
 
-def _boucle_auto_refresh():
-    """Thread daemon : vérifie toutes les heures si un auto-refresh est dû."""
+def _boucle_verif_version():
+    """Thread daemon : vérifie la version GitHub une fois par jour."""
     TZ = ZoneInfo("Europe/Paris")
-    param_file = SCRIPTS_DIR / "api_conso" / "api_conso_param.json"
     while True:
-        time.sleep(3600)
         try:
-            if not param_file.exists():
-                continue
-            with open(param_file, encoding="utf-8") as f:
-                param = json.load(f)
-            if not param.get("auto_refresh"):
-                continue
-            prochaine_str = param.get("prochaine_maj")
-            if not prochaine_str:
-                continue
-            prochaine = datetime.fromisoformat(prochaine_str)
-            if datetime.now(TZ) >= prochaine:
-                logger.info("Auto-refresh : déclenchement automatique")
-                _relancer_pipeline()
+            check = _lire_version_check()
+            besoin_verif = True
+            checked_at = check.get("checked_at")
+            if checked_at:
+                try:
+                    dt = datetime.fromisoformat(checked_at)
+                    if (datetime.now(TZ) - dt).total_seconds() < 86400:
+                        besoin_verif = False
+                except Exception:
+                    pass
+            if besoin_verif:
+                logger.info("Vérification de version GitHub...")
+                result = _verifier_version_github()
+                _ecrire_version_check(result)
+                courante = _lire_version_courante()
+                latest = result.get("latest")
+                if latest and _comparer_versions(courante, latest) > 0:
+                    logger.info("Nouvelle version disponible : %s (installée : %s)", latest, courante)
+                else:
+                    logger.info("Version à jour : %s", courante)
         except Exception as exc:
-            logger.error("Auto-refresh : erreur → %s", exc)
+            logger.error("Vérification version : erreur → %s", exc)
+        time.sleep(3600)
 
 
-def demarrer(global_param: dict):
-    """Démarre le serveur Flask avec les paramètres globaux."""
-    global _global_param
-    _global_param = global_param
-    threading.Thread(target=_boucle_auto_refresh, daemon=True, name="auto-refresh").start()
+def demarrer(global_param, get_data_fn, relancer_pipeline_fn,
+             relancer_tarifs_fn, importer_csv_fn):
+    # type: (dict, object, object, object, object) -> None
+    """Démarre le serveur Flask. Reçoit les callbacks de l'orchestrateur."""
+    global _global_param, _get_data_fn, _relancer_pipeline_fn
+    global _relancer_tarifs_fn, _importer_csv_fn
+    _global_param         = global_param
+    _get_data_fn          = get_data_fn
+    _relancer_pipeline_fn = relancer_pipeline_fn
+    _relancer_tarifs_fn   = relancer_tarifs_fn
+    _importer_csv_fn      = importer_csv_fn
+
+    threading.Thread(target=_boucle_verif_version, daemon=True, name="verif-version").start()
     port = global_param.get("port", 8080)
     logger.info("Serveur Flask démarré sur http://0.0.0.0:%d", port)
     app.run(host="0.0.0.0", port=port, debug=False)
-
-
-if __name__ == "__main__":
-    # Lancement autonome (sans orchestrator)
-    logging.basicConfig(level=logging.INFO,
-                        format="%(asctime)s [%(levelname)s] %(name)s - %(message)s")
-    demarrer({"port": 8080, "api_conso_statut": False, "DATA": {}})

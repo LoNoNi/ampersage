@@ -1,7 +1,12 @@
 {
   "FR": {
     "nav_home": "Accueil",
+    "nav_details": "Détails",
     "nav_settings": "Paramètres",
+    "accueil_description": "Bienvenue dans Ampersage. Consultez l'onglet Détails pour voir vos données de consommation et les comparaisons tarifaires.",
+    "chargement": "Chargement...",
+    "aucune_donnee": "Aucune donnée disponible.",
+    "erreur_chargement": "Erreur lors du chargement des données.",
     "btn_save": "Sauvegarder",
     "btn_init": "Initialiser",
     "btn_search_history": "Rechercher historique",
@@ -18,7 +23,12 @@
   },
   "EN": {
     "nav_home": "Home",
+    "nav_details": "Details",
     "nav_settings": "Settings",
+    "accueil_description": "Welcome to Ampersage. Check the Details tab to view your consumption data and tariff comparisons.",
+    "chargement": "Loading...",
+    "aucune_donnee": "No data available.",
+    "erreur_chargement": "Error loading data.",
     "btn_save": "Save",
     "btn_init": "Initialize",
     "btn_search_history": "Search history",

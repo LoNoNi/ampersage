@@ -1,0 +1,502 @@
+<style>
+  .eco2mix-panel { font-family: inherit; }
+
+  .eco2mix-brand {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 1.25rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 2px solid #e8f0fe;
+  }
+
+  .eco2mix-logo {
+    background: #1a6b3c;
+    color: white;
+    font-size: 0.85rem;
+    font-weight: 900;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+  }
+
+  .eco2mix-brand-desc { color: #888; font-size: 0.85rem; }
+
+  /* Encart base locale */
+  .eco2mix-base-locale {
+    background: #f4faf7;
+    border: 1px solid #b7dfc9;
+    border-radius: 8px;
+    padding: 0.75rem 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .eco2mix-base-titre {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: #1a6b3c;
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .eco2mix-base-stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem 1.5rem;
+    font-size: 0.85rem;
+    color: #444;
+  }
+
+  .eco2mix-base-stats span { white-space: nowrap; }
+
+  /* Sections */
+  .eco2mix-section {
+    margin-bottom: 1.25rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid #eee;
+  }
+  .eco2mix-section:last-child { border-bottom: none; margin-bottom: 0; }
+
+  .eco2mix-section-titre {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #333;
+    margin-bottom: 0.75rem;
+  }
+
+  .eco2mix-note {
+    font-size: 0.78rem;
+    color: #888;
+    margin: 0 0 0.6rem 0;
+    font-style: italic;
+  }
+
+  /* Grille paramètres */
+  .eco2mix-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.75rem;
+  }
+
+  .eco2mix-grid label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: #555;
+  }
+
+  .eco2mix-grid label.full-width { grid-column: 1 / -1; }
+
+  .eco2mix-grid input {
+    padding: 0.4rem 0.65rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 0.92rem;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.2s;
+  }
+
+  .eco2mix-grid input:focus {
+    border-color: #1a6b3c;
+    box-shadow: 0 0 0 2px rgba(26,107,60,0.12);
+  }
+
+  .eco2mix-unit {
+    font-size: 0.75rem;
+    color: #999;
+    font-weight: 400;
+  }
+
+  /* Tableau facteurs */
+  .eco2mix-facteurs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.88rem;
+    margin-top: 0.25rem;
+  }
+
+  .eco2mix-facteurs-table th {
+    background: #f5f5f5;
+    color: #444;
+    font-weight: 700;
+    padding: 0.4rem 0.65rem;
+    text-align: left;
+    border-bottom: 2px solid #ddd;
+  }
+
+  .eco2mix-facteurs-table td {
+    padding: 0.3rem 0.65rem;
+    border-bottom: 1px solid #eee;
+    vertical-align: middle;
+  }
+
+  .eco2mix-facteurs-table input[type="number"] {
+    width: 80px;
+    padding: 0.25rem 0.4rem;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.88rem;
+    font-family: inherit;
+    text-align: right;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  .eco2mix-facteurs-table input[type="number"]:focus {
+    border-color: #1a6b3c;
+    box-shadow: 0 0 0 2px rgba(26,107,60,0.12);
+  }
+
+  .eco2mix-filiere-dot {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+    flex-shrink: 0;
+  }
+
+  /* Boutons */
+  .eco2mix-btn-reset {
+    padding: 0.25rem 0.7rem;
+    background: #f5f5f5;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    color: #555;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .eco2mix-btn-reset:hover { background: #e8e8e8; }
+
+  /* Infobulle CO2 (page principale) */
+  .eco2mix-tooltip {
+    position: fixed;
+    z-index: 9999;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border-radius: 10px;
+    padding: 0.75rem 1rem;
+    min-width: 240px;
+    max-width: 320px;
+    font-size: 0.82rem;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+    pointer-events: none;
+    transition: opacity 0.12s;
+  }
+  .eco2mix-tooltip.hidden { opacity: 0; }
+
+  .eco2mix-tip-titre {
+    font-weight: 700;
+    font-size: 0.78rem;
+    color: #a6e3a1;
+    margin-bottom: 0.4rem;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+  }
+
+  .eco2mix-tip-row {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.2rem;
+  }
+
+  .eco2mix-tip-label { color: #bac2de; }
+  .eco2mix-tip-val { font-weight: 700; color: #cdd6f4; }
+  .eco2mix-tip-val.co2-moyen { color: #89b4fa; }
+  .eco2mix-tip-val.co2-marginal { color: #f38ba8; }
+
+  .eco2mix-tip-sep {
+    border: none;
+    border-top: 1px solid #313244;
+    margin: 0.4rem 0;
+  }
+
+  .eco2mix-tip-mix { margin-top: 0.3rem; }
+
+  .eco2mix-tip-filiere {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: 0.15rem;
+  }
+
+  .eco2mix-tip-barre-fond {
+    flex: 1;
+    height: 6px;
+    background: #313244;
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  .eco2mix-tip-barre-fill {
+    height: 100%;
+    border-radius: 3px;
+  }
+
+  .eco2mix-tip-pct {
+    font-size: 0.75rem;
+    color: #a6adc8;
+    min-width: 30px;
+    text-align: right;
+  }
+
+  .eco2mix-tip-badge {
+    font-size: 0.7rem;
+    padding: 0.1rem 0.35rem;
+    border-radius: 3px;
+    font-weight: 700;
+    margin-left: 0.25rem;
+  }
+  .eco2mix-tip-badge.cache { background: #313244; color: #7f849c; }
+  .eco2mix-tip-badge.api   { background: #1e3a2e; color: #a6e3a1; }
+</style>
+
+<div class="eco2mix-panel">
+
+  <!-- En-tête -->
+  <div class="eco2mix-brand">
+    <span class="eco2mix-logo">éCO2mix</span>
+    <span class="eco2mix-brand-desc">Mix électrique national et CO2 en temps réel — RTE</span>
+  </div>
+
+  <!-- Encart base locale (non éditable) -->
+  <div class="eco2mix-base-locale">
+    <div class="eco2mix-base-titre">Base de données locale</div>
+    <div class="eco2mix-base-stats" id="eco2mix-base-stats">
+      <span>Chargement…</span>
+    </div>
+  </div>
+
+  <!-- Groupe 1 : Connexion API -->
+  <div class="eco2mix-section">
+    <div class="eco2mix-section-titre">Connexion API RTE</div>
+    <div class="eco2mix-grid">
+      <label class="full-width">
+        URL de l'API
+        <input data-param="url_api_rte" type="text" />
+      </label>
+      <label>
+        Intervalle minimum entre appels
+        <input data-param="intervalle_min_minutes" type="number" min="1" max="60" />
+        <span class="eco2mix-unit">minutes</span>
+      </label>
+      <label>
+        Timeout
+        <input data-param="timeout_secondes" type="number" min="1" max="120" />
+        <span class="eco2mix-unit">secondes</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Groupe 2 : Facteurs d'émission -->
+  <div class="eco2mix-section">
+    <div class="eco2mix-section-titre">
+      Facteurs d'émission
+      <button class="eco2mix-btn-reset" id="eco2mix-reset-facteurs" type="button">
+        Réinitialiser IPCC/ADEME
+      </button>
+    </div>
+    <p class="eco2mix-note">Utilisés uniquement pour le CO2 marginal AmperSage · n'affectent pas le CO2 moyen (taux officiel RTE)</p>
+    <table class="eco2mix-facteurs-table">
+      <thead>
+        <tr>
+          <th>Filière</th>
+          <th>gCO2eq/kWh</th>
+        </tr>
+      </thead>
+      <tbody id="eco2mix-facteurs-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- Groupe 3 : Seuil marginal -->
+  <div class="eco2mix-section">
+    <div class="eco2mix-section-titre">CO2 marginal</div>
+    <div class="eco2mix-grid">
+      <label>
+        Seuil marginal
+        <input data-param="seuil_marginal" type="number" min="1" max="50" step="0.5" />
+        <span class="eco2mix-unit">% de la production totale (min : 1 · max : 50)</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- Groupe 4 : Infobulle -->
+  <div class="eco2mix-section">
+    <div class="eco2mix-section-titre">Affichage de l'infobulle</div>
+    <div class="eco2mix-grid">
+      <label>
+        Délai avant affichage
+        <input data-param="infobulle_delai_ms" type="number" min="0" max="2000" step="50" />
+        <span class="eco2mix-unit">ms</span>
+      </label>
+      <label>
+        Seuil affichage filière
+        <input data-param="infobulle_filieres_min_pct" type="number" min="0" max="20" step="0.5" />
+        <span class="eco2mix-unit">% de la production</span>
+      </label>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function () {
+  var FACTEURS_DEFAUT = {
+    nucleaire: 12, hydraulique: 6, eolien_terrestre: 11, eolien_offshore: 11,
+    solaire: 45, bioenergies: 230, gaz: 490, fioul: 650, charbon: 820,
+  };
+
+  var NOMS_FILIERES = {
+    nucleaire: 'Nucléaire', hydraulique: 'Hydraulique',
+    eolien_terrestre: 'Éolien terrestre', eolien_offshore: 'Éolien offshore',
+    solaire: 'Solaire', bioenergies: 'Bioénergies',
+    gaz: 'Gaz', fioul: 'Fioul', charbon: 'Charbon',
+  };
+
+  var COULEURS_FILIERES = {
+    nucleaire: '#534AB7', hydraulique: '#1D9E75',
+    eolien_terrestre: '#378ADD', eolien_offshore: '#185FA5',
+    solaire: '#EF9F27', bioenergies: '#639922',
+    gaz: '#BA7517', fioul: '#D85A30', charbon: '#888780',
+  };
+
+  // ── Tableau facteurs ──────────────────────────────────────────────────────
+
+  function construireTableauFacteurs(facteurs) {
+    var tbody = document.getElementById('eco2mix-facteurs-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    Object.keys(FACTEURS_DEFAUT).forEach(function (filiere) {
+      var valeur = (facteurs && facteurs[filiere] !== undefined) ? facteurs[filiere] : FACTEURS_DEFAUT[filiere];
+      var couleur = COULEURS_FILIERES[filiere] || '#888';
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' +
+          '<span class="eco2mix-filiere-dot" style="background:' + couleur + '"></span>' +
+          (NOMS_FILIERES[filiere] || filiere) +
+        '</td>' +
+        '<td><input type="number" min="0" max="2000" step="1" ' +
+          'data-filiere="' + filiere + '" value="' + valeur + '" /></td>';
+      tbody.appendChild(tr);
+    });
+  }
+
+  construireTableauFacteurs(FACTEURS_DEFAUT);
+
+  var btnReset = document.getElementById('eco2mix-reset-facteurs');
+  if (btnReset) {
+    btnReset.addEventListener('click', function () {
+      construireTableauFacteurs(FACTEURS_DEFAUT);
+    });
+  }
+
+  // ── Stats base locale ─────────────────────────────────────────────────────
+
+  function _chargerStatsBase() {
+    var el = document.getElementById('eco2mix-base-stats');
+    if (!el) return;
+    fetch('/api/script', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ script: 'eco2mix', mode: 'GET_STATS', params: {} }),
+    })
+    .then(function (r) { return r.json(); })
+    .then(function (data) {
+      if (data.status && data.data) {
+        var d = data.data;
+        var html = '';
+        html += '<span>' + (d.total_creneaux || 0) + ' créneaux</span>';
+        if (d.premier_enregistrement) {
+          html += '<span>Depuis : ' + d.premier_enregistrement.substring(0, 10) + '</span>';
+        }
+        if (d.dernier_enregistrement) {
+          html += '<span>Jusqu\'à : ' + d.dernier_enregistrement.substring(0, 10) + '</span>';
+        }
+        html += '<span>' + d.taille_fichier_ko + ' Ko</span>';
+        if (d.dernier_fetch_api) {
+          var dt = new Date(d.dernier_fetch_api);
+          html += '<span>Dernier appel API : ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</span>';
+        }
+        el.innerHTML = html;
+      } else {
+        el.innerHTML = '<span style="color:#888">Base vide — aucune donnée chargée</span>';
+      }
+    })
+    .catch(function () {
+      el.innerHTML = '<span style="color:#c62828">Erreur de chargement</span>';
+    });
+  }
+
+  _chargerStatsBase();
+
+  // ── Collecteur personnalisé ───────────────────────────────────────────────
+
+  window.getParams_eco2mix = function () {
+    var facteurs = {};
+    document.querySelectorAll('#eco2mix-facteurs-tbody input[data-filiere]').forEach(function (el) {
+      facteurs[el.dataset.filiere] = parseInt(el.value, 10) || 0;
+    });
+
+    function _val(selector) {
+      var el = document.querySelector('[data-param="' + selector + '"]');
+      return el ? el.value : null;
+    }
+
+    var seuilRaw = parseFloat(_val('seuil_marginal'));
+    // L'utilisateur entre des % (ex : 10) → on envoie 10, le backend convertit en 0.10
+    return {
+      url_api_rte:              _val('url_api_rte'),
+      intervalle_min_minutes:   parseInt(_val('intervalle_min_minutes'), 10) || 15,
+      timeout_secondes:         parseInt(_val('timeout_secondes'), 10) || 10,
+      seuil_marginal:           isNaN(seuilRaw) ? 10 : seuilRaw,
+      infobulle_delai_ms:       parseInt(_val('infobulle_delai_ms'), 10) || 200,
+      infobulle_filieres_min_pct: parseFloat(_val('infobulle_filieres_min_pct')) || 1,
+      facteurs_emission:        facteurs,
+    };
+  };
+
+  // ── Setter personnalisé ───────────────────────────────────────────────────
+
+  window.setParams_eco2mix = function (data) {
+    if (!data) return;
+
+    function _set(selector, val) {
+      var el = document.querySelector('[data-param="' + selector + '"]');
+      if (el && val !== null && val !== undefined) el.value = val;
+    }
+
+    _set('url_api_rte',              data.url_api_rte);
+    _set('intervalle_min_minutes',   data.intervalle_min_minutes);
+    _set('timeout_secondes',         data.timeout_secondes);
+    _set('infobulle_delai_ms',       data.infobulle_delai_ms);
+    _set('infobulle_filieres_min_pct', data.infobulle_filieres_min_pct);
+
+    // Seuil marginal : convertir 0.10 → 10 pour l'affichage en %
+    if (data.seuil_marginal !== null && data.seuil_marginal !== undefined) {
+      var s = parseFloat(data.seuil_marginal);
+      _set('seuil_marginal', s <= 1 ? Math.round(s * 100 * 10) / 10 : s);
+    }
+
+    if (data.facteurs_emission) {
+      construireTableauFacteurs(data.facteurs_emission);
+    }
+
+    _chargerStatsBase();
+  };
+
+  // Infobulle gérée par app.js (chargé statiquement)
+  if (window.eco2mixInitTooltips) window.eco2mixInitTooltips();
+})();
+</script>

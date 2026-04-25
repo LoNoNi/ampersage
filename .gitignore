@@ -1,10 +1,13 @@
 # ─── Données personnelles (NE JAMAIS COMMITTER) ──────────────────────────────
 
-# Paramètres API conso : contient le token et le PRM
-scripts/api_conso/api_conso_param.json
+# Paramètres de tous les scripts : contiennent tokens, PDL, données sensibles
+*_param.json
 
-# Données de consommation : mesures personnelles
-scripts/api_conso/api_conso_data.json
+# Répertoire data/ : données de consommation personnelles et records
+data/
+
+# Fichiers de records de consommation (format NDJSON)
+*.ndjson
 
 # ─── Logs ────────────────────────────────────────────────────────────────────
 
@@ -15,9 +18,17 @@ logs/
 # Paramètres globaux (générés au démarrage)
 parametres.json
 
+# Cache de vérification de version
+version_check.json
+
 # Données calculées par les scripts tarif
 *_data.json
 *_cache.json
+
+# Fichiers générés au runtime par les scripts (index, config, masques)
+*_config.json
+*_index.json
+*_masques.json
 
 # ─── Python ──────────────────────────────────────────────────────────────────
 

@@ -13,41 +13,53 @@
     <div class="nav-brand">⚡ Factures Électricité</div>
     <div class="nav-links">
       <button class="nav-btn active" data-page="home" data-i18n="nav_home">Accueil</button>
+      <button class="nav-btn" data-page="details" data-i18n="nav_details">Détails</button>
       <button class="nav-btn" data-page="settings" data-i18n="nav_settings">Paramètres</button>
     </div>
     <div class="nav-lang">
       <button class="lang-btn active" data-lang="FR">FR</button>
       <button class="lang-btn" data-lang="EN">EN</button>
     </div>
+    <span class="nav-version" id="nav-version">…</span>
     <button class="debug-toggle-btn" id="debug-toggle" title="Afficher/masquer le panneau de débogage">🐛 Debug</button>
   </nav>
 
-  <!-- Barre de statuts (visible sur toutes les pages) -->
-  <div class="status-bar" id="status-bar">
-    <div class="status-item" id="status-global">
-      <span class="status-label">Global :</span>
-      <span class="status-value" id="val-global">—</span>
+  <!-- Bandeau mise à jour (masqué par défaut) -->
+  <div id="nav-update-notif" class="nav-update-notif hidden">
+    <span id="nav-update-texte">Nouvelle version disponible : <strong id="nav-update-version"></strong></span>
+    <div class="nav-update-actions">
+      <button id="nav-btn-changelog" class="nav-update-btn">Changelog</button>
+      <button id="nav-btn-aide-update" class="nav-update-btn nav-update-btn-primary">Comment mettre à jour ?</button>
     </div>
-    <div class="status-item" id="status-api-conso">
-      <span class="status-label">API Conso :</span>
-      <span class="status-value" id="val-api-conso">—</span>
+  </div>
+
+  <!-- Modale instructions de mise à jour -->
+  <div id="update-aide-overlay" class="disclaimer-overlay hidden">
+    <div class="disclaimer-modal">
+      <button id="update-aide-close" class="disclaimer-close" title="Fermer">✕</button>
+      <h2 class="disclaimer-titre">Mise à jour</h2>
+      <div class="disclaimer-corps">
+        <p>Connectez-vous en SSH au serveur, puis exécutez :</p>
+        <pre class="update-aide-code" id="update-aide-code"></pre>
+        <p>Le service redémarre automatiquement et charge la nouvelle version.</p>
+        <p id="update-aide-version" class="update-aide-version"></p>
+      </div>
+      <div class="disclaimer-actions">
+        <div class="disclaimer-btns">
+          <button id="update-aide-changelog" class="nav-update-btn">Voir le changelog</button>
+          <button id="update-aide-ok" class="disclaimer-btn">Fermer</button>
+        </div>
+      </div>
     </div>
-    <div class="status-item script-status" id="status-sobry">
-      <span class="status-label">Sobry :</span>
-      <span class="status-value" id="val-sobry">—</span>
+  </div>
+
+  <!-- Bandeau de chargement global (visible sur tous les onglets) -->
+  <div id="loading-banner" class="loading-banner hidden">
+    <span class="loading-banner-label">Chargement des données…</span>
+    <div class="loading-banner-bar">
+      <div class="loading-banner-fill" id="loading-banner-fill" style="width:0%"></div>
     </div>
-    <div class="status-item script-status" id="status-trv_base">
-      <span class="status-label">TRV Base :</span>
-      <span class="status-value" id="val-trv_base">—</span>
-    </div>
-    <div class="status-item script-status" id="status-trv_hchp">
-      <span class="status-label">TRV HC/HP :</span>
-      <span class="status-value" id="val-trv_hchp">—</span>
-    </div>
-    <div class="status-item script-status" id="status-trv_tempo">
-      <span class="status-label">TRV Tempo :</span>
-      <span class="status-value" id="val-trv_tempo">—</span>
-    </div>
+    <span class="loading-banner-pct" id="loading-banner-lbl">0&nbsp;%</span>
   </div>
 
   <!-- Contenu principal -->
@@ -55,125 +67,45 @@
 
     <!-- Page Accueil -->
     <section id="page-home" class="page active">
-      <div id="main-content">
-        <p>Chargement...</p>
-      </div>
+      <div id="main-content"></div>
+    </section>
+
+    <!-- Page Détails -->
+    <section id="page-details" class="page">
+      <div id="details-content"></div>
     </section>
 
     <!-- Page Paramètres -->
     <section id="page-settings" class="page">
-
-      <!-- Groupe Globaux -->
-      <div class="param-group" id="group-global">
-        <h2 data-i18n="group_global">Paramètres globaux</h2>
-        <div class="param-fields">
-          <label>Port
-            <input type="number" id="param-port" value="8080" />
-          </label>
-          <label data-i18n-label="group_global">Langue
-            <select id="param-langue">
-              <option value="FR">FR</option>
-              <option value="EN">EN</option>
-            </select>
-          </label>
-        </div>
-        <div class="param-actions">
-          <button class="btn-save" data-groupe="global" data-i18n="btn_save">Sauvegarder</button>
-        </div>
-      </div>
-
-      <!-- Groupe API Conso (panel chargé dynamiquement) -->
-      <div class="param-group" id="group-api_conso">
-        <div id="panel-container-api_conso"><p class="placeholder">Chargement...</p></div>
-        <div class="param-actions">
-          <button class="btn-save" data-groupe="api_conso" data-i18n="btn_save">Sauvegarder</button>
-          <button class="btn-init" data-script="api_conso" data-i18n="btn_init">Initialiser</button>
-          <button class="btn-history" data-i18n="btn_search_history">Rechercher historique</button>
-        </div>
-        <div class="param-status-msg" id="api_conso-msg"></div>
-      </div>
-
-      <!-- Groupe Sobry (panel chargé dynamiquement) -->
-      <div class="param-group" id="group-sobry">
-        <div id="panel-container-sobry"><p class="placeholder">Chargement...</p></div>
-        <div class="param-actions">
-          <button class="btn-save" data-groupe="sobry" data-i18n="btn_save">Sauvegarder</button>
-          <button class="btn-init" data-script="sobry" data-i18n="btn_init">Initialiser</button>
-        </div>
-        <div class="param-status-msg" id="sobry-msg"></div>
-      </div>
-
-      <!-- Groupe TRV Base (panel chargé dynamiquement) -->
-      <div class="param-group" id="group-trv_base">
-        <div id="panel-container-trv_base"><p class="placeholder">Chargement...</p></div>
-        <div class="param-actions">
-          <button class="btn-save" data-groupe="trv_base" data-i18n="btn_save">Sauvegarder</button>
-          <button class="btn-init" data-script="trv_base" data-i18n="btn_init">Initialiser</button>
-        </div>
-        <div class="param-status-msg" id="trv_base-msg"></div>
-      </div>
-
-      <!-- Groupe TRV HC/HP (panel chargé dynamiquement) -->
-      <div class="param-group" id="group-trv_hchp">
-        <div id="panel-container-trv_hchp"><p class="placeholder">Chargement...</p></div>
-        <div class="param-actions">
-          <button class="btn-save" data-groupe="trv_hchp" data-i18n="btn_save">Sauvegarder</button>
-          <button class="btn-init" data-script="trv_hchp" data-i18n="btn_init">Initialiser</button>
-        </div>
-        <div class="param-status-msg" id="trv_hchp-msg"></div>
-      </div>
-
-      <!-- Groupe TRV Tempo (panel chargé dynamiquement) -->
-      <div class="param-group" id="group-trv_tempo">
-        <div id="panel-container-trv_tempo"><p class="placeholder">Chargement...</p></div>
-        <div class="param-actions">
-          <button class="btn-save" data-groupe="trv_tempo" data-i18n="btn_save">Sauvegarder</button>
-          <button class="btn-init" data-script="trv_tempo" data-i18n="btn_init">Initialiser</button>
-        </div>
-        <div class="param-status-msg" id="trv_tempo-msg"></div>
-      </div>
-
-      <!-- Groupe Voiture -->
-      <div class="param-group" id="group-voiture">
-        <h2 data-i18n="group_voiture">Voiture</h2>
-        <p class="placeholder" data-i18n="placeholder_todo">À configurer</p>
-      </div>
-
+      <div id="settings-content"></div>
     </section>
 
   </main>
 
   <!-- Panneau de débogage (masqué par défaut) -->
   <div id="debug-panel" class="debug-panel hidden">
+    <div class="debug-resize-handle" id="debug-resize-handle"></div>
     <div class="debug-header">
       <span class="debug-title">🐛 Panneau de débogage</span>
       <span class="debug-ts" id="debug-ts">—</span>
-      <button class="debug-refresh" id="debug-refresh">↺ Rafraîchir</button>
       <button class="debug-close" id="debug-close">✕</button>
     </div>
     <div class="debug-body">
-
-      <!-- Statuts -->
-      <div class="debug-section">
-        <div class="debug-section-title">Statuts</div>
-        <div id="debug-statuts" class="debug-content"></div>
-      </div>
-
-      <!-- Données API Conso -->
-      <div class="debug-section">
+      <div class="debug-section debug-section-narrow">
         <div class="debug-section-title">
-          Données API Conso
-          <span class="debug-badge" id="debug-api-conso-count"></span>
+          Pas à pas
+          <span id="debug-etape-compteur" class="debug-badge">0 / 5</span>
         </div>
-        <div id="debug-api-conso" class="debug-content debug-table-wrap"></div>
+        <div id="debug-etape-gantt" class="debug-etape-gantt"></div>
+        <div class="debug-paapas-controls">
+          <button id="debug-etape-btn" class="debug-etape-btn">▶ Étape suivante</button>
+          <button id="debug-etape-reset" class="debug-etape-reset">↺</button>
+        </div>
       </div>
-
-      <!-- Données tarifs -->
-      <div class="debug-section">
-        <div class="debug-section-title">Tarifs</div>
-        <div id="debug-tarifs" class="debug-content"></div>
+      <div class="debug-section debug-section-json">
+        <div class="debug-section-title">Fichiers JSON</div>
+        <div id="debug-json-accordeons" class="debug-json-accordeons"></div>
       </div>
-
     </div>
   </div>
 
@@ -211,6 +143,30 @@
         <div class="disclaimer-btns">
           <button id="disclaimer-refuser" class="disclaimer-btn disclaimer-btn-refuser">Refuser</button>
           <button id="disclaimer-accepter" class="disclaimer-btn">Accepter</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup plage heures creuses -->
+  <div id="plage-hc-overlay" class="disclaimer-overlay hidden">
+    <div class="disclaimer-modal">
+      <h2 class="disclaimer-titre">Heures creuses</h2>
+      <div class="disclaimer-corps">
+        <p>Des offres HP/HC ont été détectées mais aucune plage horaire heures creuses n'est configurée.</p>
+        <p>Indiquez votre plage heures creuses (visible sur votre contrat ou facture Enedis) :</p>
+        <label class="plage-hc-label">
+          Plage heures creuses
+          <input id="plage-hc-input" class="plage-hc-input" type="text"
+                 placeholder="ex\u00a0: 22h00\u21926h00 + 12h00\u219214h00" />
+        </label>
+        <p class="plage-hc-hint">Format\u00a0: <code>22h00\u219206h00 + 12h00\u219214h00</code> &mdash; s\xe9parer plusieurs plages par <code>+</code></p>
+        <div id="plage-hc-err" class="plage-hc-err hidden"></div>
+      </div>
+      <div class="disclaimer-actions">
+        <div class="disclaimer-btns">
+          <button id="plage-hc-annuler" class="disclaimer-btn disclaimer-btn-secondary">Plus tard</button>
+          <button id="plage-hc-valider" class="disclaimer-btn">Enregistrer</button>
         </div>
       </div>
     </div>
