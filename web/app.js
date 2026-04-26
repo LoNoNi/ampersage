@@ -5,6 +5,8 @@
 var translations = {};
 var currentLang  = "FR";
 var _cache       = { statuts: null, results: null };
+var _tariffIndex    = {};  // { offre_id: { "2024-04-19T00:00": {pk, h} } }
+var _hourKeyCache   = {};  // cache ts → clé heure Paris (évite recalcul Intl)
 var _dataReady   = false;
 var _contenuPages = {};   // contenu posé par les étapes, préservé à la navigation
 var _detailsConfig   = null; // {acCols, e2mCols, offres} — rempli par _construireTableauDetails
@@ -177,6 +179,12 @@ var _acDateFmt = new Intl.DateTimeFormat("fr-FR", {
   year: "numeric", month: "2-digit", day: "2-digit"
 });
 
+var _acHourFmt = new Intl.DateTimeFormat("fr-FR", {
+  timeZone: "Europe/Paris",
+  year: "numeric", month: "2-digit", day: "2-digit",
+  hour: "2-digit", hourCycle: "h23"
+});
+
 function _acGroupeKey(ts) {
   /* Extrait year/month/day en heure de Paris depuis un timestamp ISO.
      Évite le décalage UTC : un relevé à 23h30 UTC = lendemain à Paris. */
@@ -189,6 +197,80 @@ function _acGroupeKey(ts) {
     if (p.type === "day")   d = p.value;
   });
   return { year: y, month: y + "-" + m, day: y + "-" + m + "-" + d };
+}
+
+function _tariffHourKey(ts) {
+  /* Retourne "YYYY-MM-DDTHH:00" en heure de Paris — clé de lookup dans _tariffIndex. */
+  if (!ts) return "";
+  if (_hourKeyCache[ts]) return _hourKeyCache[ts];
+  var parts = _acHourFmt.formatToParts(new Date(ts));
+  var y = "", m = "", d = "", h = "";
+  parts.forEach(function(p) {
+    if (p.type === "year")  y = p.value;
+    if (p.type === "month") m = p.value;
+    if (p.type === "day")   d = p.value;
+    if (p.type === "hour")  h = p.value;
+  });
+  return (_hourKeyCache[ts] = y + "-" + m + "-" + d + "T" + h + ":00");
+}
+
+function _genSlug(s) {
+  /* Miroir JS de _slugifier Python : slug ASCII minuscule. */
+  return s.normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+function _chargerTariffNdjson(offreId, url) {
+  /* Charge le NDJSON tarif et l'indexe par clé heure Paris. */
+  fetch(url)
+    .then(function(r) { return r.ok ? r.text() : null; })
+    .then(function(texte) {
+      if (!texte) return;
+      var idx = {};
+      texte.split("\n").forEach(function(ligne) {
+        var l = ligne.trim();
+        if (!l) return;
+        try {
+          var rec = JSON.parse(l);
+          if (rec.t) idx[rec.t] = { pk: rec.pk || 0, h: rec.h || null };
+        } catch(e) {}
+      });
+      _tariffIndex[offreId] = idx;
+      console.log("[tariff] chargé:", offreId, "→", Object.keys(idx).length, "créneaux. Exemple clé:", Object.keys(idx)[0]);
+    })
+    .catch(function(e) { console.warn("[tariff] erreur chargement", offreId, e); });
+}
+
+var _tariffDebugDone = false;
+function _tariffCellsHtml(offre, r, hourKey) {
+  /* Retourne les <td>s de l'offre pour un record (sans le wrapper <tr>). */
+  var td = _tariffIndex[offre.id] && _tariffIndex[offre.id][hourKey];
+  if (!_tariffDebugDone) {
+    _tariffDebugDone = true;
+    console.log("[tariff] premier lookup — offre:", offre.id, "| hourKey:", hourKey, "| index dispo:", !!_tariffIndex[offre.id], "| entrée trouvée:", !!td);
+    if (_tariffIndex[offre.id]) {
+      var keys = Object.keys(_tariffIndex[offre.id]);
+      console.log("[tariff] exemple clé index:", keys[0], "| total:", keys.length);
+    }
+  }
+  if (!td || !offre.detail_ligne) {
+    return '<td colspan="' + offre.cols + '"></td>';
+  }
+  var pk      = td.pk || 0;
+  var kwh     = r.kwh || 0;
+  var prixEur = (kwh * pk).toFixed(4);
+  var typeHc  = td.h === "C" ? "HC" : (td.h === "H" ? "HP" : "");
+  var typeCss = td.h === "C" ? "hc" : (td.h === "H" ? "hp" : "");
+  var html = offre.detail_ligne
+    .replace(/\{\{type_hc\}\}/g,  typeHc)
+    .replace(/\{\{type_css\}\}/g, typeCss)
+    .replace(/\{\{prix_kwh\}\}/g, pk.toFixed(6))
+    .replace(/\{\{prix_eur\}\}/g, prixEur);
+  // Extraire les <td>s en retirant le wrapper <tr ...>...</tr>
+  return html.replace(/^\s*<tr[^>]*>\s*/i, "").replace(/\s*<\/tr>\s*$/i, "");
 }
 
 function _acNomMois(monthKey) {
@@ -209,6 +291,41 @@ function _acCellulesVides(cfg) {
   return s;
 }
 
+function _acTariffStatsGroupe(records, offres) {
+  /* Calcule pour chaque offre : coût total (€) et kwh total sur un groupe de records.
+     Utilisé pour les lignes de regroupement (année/mois/jour). */
+  var stats = {};
+  offres.forEach(function(o) { stats[o.id] = { prix_eur: 0, kwh: 0 }; });
+  records.forEach(function(r) {
+    var hourKey = _tariffHourKey(r.ts);
+    var kwh     = r.kwh || 0;
+    offres.forEach(function(o) {
+      var td = _tariffIndex[o.id] && _tariffIndex[o.id][hourKey];
+      if (td) {
+        stats[o.id].prix_eur += kwh * (td.pk || 0);
+        stats[o.id].kwh      += kwh;
+      }
+    });
+  });
+  return stats;
+}
+
+function _acGroupCellsTarif(offre, tariffStats) {
+  /* Cellules tarif pour une ligne de groupe : total coût + prix moyen pondéré. */
+  var s = tariffStats && tariffStats[offre.id];
+  if (!s || s.kwh === 0 || !offre.detail_ligne) {
+    return '<td colspan="' + offre.cols + '"></td>';
+  }
+  var prixKwh = (s.prix_eur / s.kwh).toFixed(6);  // moyenne pondérée (exact pour base, agrégat pour HPHC)
+  var prixEur = s.prix_eur.toFixed(2);
+  var html = offre.detail_ligne
+    .replace(/\{\{type_hc\}\}/g,  "")   // pas de type HC/HP pour un agrégat
+    .replace(/\{\{type_css\}\}/g, "")
+    .replace(/\{\{prix_kwh\}\}/g, prixKwh)
+    .replace(/\{\{prix_eur\}\}/g, prixEur);
+  return html.replace(/^\s*<tr[^>]*>\s*/i, "").replace(/\s*<\/tr>\s*$/i, "");
+}
+
 function _acStats(records) {
   /* Calcule { count, kwh, pmax } sur un tableau de records. */
   var count = 0, kwh = 0, pmax = 0;
@@ -220,31 +337,52 @@ function _acStats(records) {
   return { count: count, kwh: kwh, pmax: pmax };
 }
 
-function _acLigneGroupe(ligneTpl, cfg, classes, acId, acDay, labelHtml, stats) {
-  /* Construit une ligne de groupe en réutilisant la structure de colonnes de ligneTpl.
-     {{ts}}   → labelHtml (toggle + nom du groupe + nb relevés)
-     {{kwh}}  → somme kWh
-     {{pmax}} → pmax max */
+function _acLigneGroupe(ligneTpl, cfg, classes, acId, acDay, labelHtml, stats, tariffStats) {
+  /* Construit une ligne de groupe.
+     tariffStats : résultat de _acTariffStatsGroupe (peut être null → cellules vides) */
   var tr = '<tr class="ac-group ' + classes + '" data-ac-id="' + acId + '"' +
            (acDay ? ' data-ac-day="' + acDay + '"' : '') + '>';
   tr += ligneTpl
     .replace(/\{\{ts\}\}/g,   labelHtml)
     .replace(/\{\{kwh\}\}/g,  stats.kwh.toFixed(1))
     .replace(/\{\{pmax\}\}/g, stats.pmax.toFixed(1));
-  tr += _acCellulesVides(cfg) + '</tr>';
+  tr += '<td colspan="' + cfg.e2mCols + '"></td>';
+  cfg.offres.forEach(function(o) { tr += _acGroupCellsTarif(o, tariffStats); });
+  tr += '</tr>';
   return tr;
 }
 
 function _acHtmlGroupe(cfg, ligneTpl) {
   /* Construit les lignes de regroupement (année/mois/jour).
-     Années et mois ouverts par défaut. Jours fermés. Détails lazy.
-     Les valeurs kWh/pmax sont alignées sur les colonnes du tableau. */
+     Tri décroissant. Ligne TOTAL en tête. Détails lazy. */
   var html = "";
-  var years = Object.keys(_acGroups).sort();
+  var years = Object.keys(_acGroups).sort().reverse();
+
+  // ── Ligne TOTAL ───────────────────────────────────────────────────────────
+  var allRecs = [];
+  years.forEach(function(y) {
+    var yd = _acGroups[y];
+    Object.keys(yd).forEach(function(mo) {
+      Object.keys(yd[mo]).forEach(function(d) { allRecs = allRecs.concat(yd[mo][d]); });
+    });
+  });
+  var tStats = _acStats(allRecs);
+  var tTarif = _acTariffStatsGroupe(allRecs, cfg.offres);
+  var tLabel = '<strong>Total</strong>' +
+               ' <span class="ac-count">' + tStats.count + '\u00a0relevés</span>';
+  var trTotal = '<tr class="ac-group ac-total">';
+  trTotal += ligneTpl
+    .replace(/\{\{ts\}\}/g,   tLabel)
+    .replace(/\{\{kwh\}\}/g,  tStats.kwh.toFixed(1))
+    .replace(/\{\{pmax\}\}/g, tStats.pmax.toFixed(1));
+  trTotal += '<td colspan="' + cfg.e2mCols + '"></td>';
+  cfg.offres.forEach(function(o) { trTotal += _acGroupCellsTarif(o, tTarif); });
+  trTotal += '</tr>';
+  html += trTotal;
 
   years.forEach(function(year) {
     var yearData = _acGroups[year];
-    var months   = Object.keys(yearData).sort();
+    var months   = Object.keys(yearData).sort().reverse();
 
     var allYearRecs = [];
     months.forEach(function(m) {
@@ -252,36 +390,39 @@ function _acHtmlGroupe(cfg, ligneTpl) {
         allYearRecs = allYearRecs.concat(yearData[m][d]);
       });
     });
-    var yStats = _acStats(allYearRecs);
+    var yStats      = _acStats(allYearRecs);
+    var yTarif      = _acTariffStatsGroupe(allYearRecs, cfg.offres);
     var yLabel = '<button class="ac-toggle" data-ac-open="1">▼</button>' +
                  ' <strong>' + year + '</strong>' +
                  ' <span class="ac-count">' + yStats.count + '\u00a0relevés</span>';
 
-    html += _acLigneGroupe(ligneTpl, cfg, 'ac-year', 'y-' + year, null, yLabel, yStats);
+    html += _acLigneGroupe(ligneTpl, cfg, 'ac-year', 'y-' + year, null, yLabel, yStats, yTarif);
 
     months.forEach(function(month) {
       var monthData = yearData[month];
-      var days      = Object.keys(monthData).sort();
+      var days      = Object.keys(monthData).sort().reverse();
 
       var allMonthRecs = [];
       days.forEach(function(d) { allMonthRecs = allMonthRecs.concat(monthData[d]); });
       var mStats = _acStats(allMonthRecs);
-      var mLabel = '<button class="ac-toggle" data-ac-open="1">▼</button>' +
+      var mTarif = _acTariffStatsGroupe(allMonthRecs, cfg.offres);
+      var mLabel = '<button class="ac-toggle" data-ac-open="0">▶</button>' +
                    ' <strong>' + _acNomMois(month) + '</strong>' +
                    ' <span class="ac-count">' + mStats.count + '\u00a0relevés</span>';
 
       html += _acLigneGroupe(ligneTpl, cfg,
-        'ac-month ac-child-y-' + year, 'm-' + month, null, mLabel, mStats);
+        'ac-month ac-child-y-' + year, 'm-' + month, null, mLabel, mStats, mTarif);
 
       days.forEach(function(day) {
         var recs   = monthData[day];
         var dStats = _acStats(recs);
+        var dTarif = _acTariffStatsGroupe(recs, cfg.offres);
         var dLabel = '<button class="ac-toggle" data-ac-open="0">▶</button>' +
                      ' ' + _acNomJour(day) +
                      ' <span class="ac-count">' + dStats.count + '\u00a0relevés</span>';
 
         html += _acLigneGroupe(ligneTpl, cfg,
-          'ac-day ac-child-m-' + month + ' hidden', 'd-' + day, day, dLabel, dStats);
+          'ac-day ac-child-m-' + month + ' hidden', 'd-' + day, day, dLabel, dStats, dTarif);
       });
     });
   });
@@ -296,14 +437,22 @@ function _acRendreDetailJour(tbody, dayRow, day) {
   var parts    = day.split("-"); // ["2024","01","15"]
   var recs     = ((_acGroups[parts[0]] || {})[parts[0]+"-"+parts[1]] || {})[day] || [];
 
+  // Tri décroissant (le plus récent en haut)
+  recs = recs.slice().sort(function(a, b) {
+    return a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0;
+  });
+
   var html = "";
   recs.forEach(function(r) {
+    var hourKey    = _tariffHourKey(r.ts);
+    var cellesExt  = '<td colspan="' + cfg.e2mCols + '"></td>';
+    cfg.offres.forEach(function(o) { cellesExt += _tariffCellsHtml(o, r, hourKey); });
     html += '<tr class="ac-detail ac-child-d-' + day + '">' +
       ligneTpl
         .replace(/\{\{ts\}\}/g,   _formaterTs(r.ts))
         .replace(/\{\{kwh\}\}/g,  r.kwh  !== undefined ? r.kwh.toFixed(3)  : "")
         .replace(/\{\{pmax\}\}/g, r.pmax !== undefined ? r.pmax.toFixed(1) : "") +
-      _acCellulesVides(cfg) + '</tr>';
+      cellesExt + '</tr>';
   });
 
   var tmp  = document.createElement("table");
@@ -521,8 +670,15 @@ function _construireTableauDetails(masques) {
     var id     = kv[0]; var m = kv[1];
     var lignes = _parseBandeau(m.detail_bandeau || "");
     var cols   = lignes.length ? lignes[lignes.length - 1].cols : 2;
-    return { id: id, cols: cols, lignes: lignes };
+    return {
+      id: id, cols: cols, lignes: lignes,
+      detail_ligne: m.detail_ligne || "",
+      ndjson_url: "/data/tarif_" + _genSlug(id) + ".ndjson",
+    };
   });
+
+  // Lancement du chargement des NDJSON tarif en arrière-plan
+  offres.forEach(function(o) { _chargerTariffNdjson(o.id, o.ndjson_url); });
 
   // Nombre de lignes de bandeau (même nombre pour toutes les offres)
   var nbLignesBandeau = offres.reduce(function (max, o) {
@@ -956,9 +1112,11 @@ function _debugCreerCase(id, label) {
 
 function _debugEtapeReset() {
   _etape         = { idx: 0, data: {}, resultats: new Array(_ETAPES.length).fill(null) };
-  _detailsConfig = null;
-  _acGroups      = null;
-  _acGroupsCfg   = null;
+  _detailsConfig  = null;
+  _acGroups       = null;
+  _acGroupsCfg    = null;
+  _hourKeyCache   = {};
+  _tariffIndex    = {};
   var acc = document.getElementById("debug-json-accordeons");
   if (acc) acc.innerHTML = "";
   // Seule la case manifest est connue d'avance
