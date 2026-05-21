@@ -1,0 +1,971 @@
+<style>
+  .sol-panel { font-family: inherit; }
+
+  .sol-brand {
+    display: flex; align-items: center; gap: 0.75rem;
+    margin-bottom: 1.25rem; padding-bottom: 0.75rem;
+    border-bottom: 2px solid #fff3cd;
+  }
+  .sol-logo {
+    background: #f59e0b; color: white;
+    padding: 0.3rem 0.8rem; border-radius: 6px;
+    font-weight: 900; font-size: 0.85rem; letter-spacing: 0.5px;
+  }
+  .sol-brand-desc { color: #888; font-size: 0.85rem; }
+
+  /* Section paramètres panneau */
+  .sol-panneau-section {
+    border: 1px solid #fcd34d; border-radius: 8px;
+    background: #fffbeb; padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+  }
+  .sol-panneau-titre {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: #92400e; margin-bottom: 0.75rem;
+  }
+  /* Ligne 1 : champ coût + paragraphe côte à côte */
+  .sol-panneau-row1 {
+    display: flex; align-items: flex-start; gap: 1.25rem;
+    margin-bottom: 0.75rem;
+  }
+  /* Ligne 2 : 4 champs sur une seule ligne */
+  .sol-panneau-row2 {
+    display: flex; align-items: flex-start; gap: 1.5rem; flex-wrap: wrap;
+  }
+  /* Champ individuel : label au-dessus, input + unité sur la même ligne */
+  .sol-panneau-field {
+    display: flex; flex-direction: column; gap: 0.25rem; flex-shrink: 0;
+  }
+  .sol-panneau-field label {
+    font-size: 0.8rem; color: #78350f; font-weight: 600; white-space: nowrap;
+  }
+  .sol-panneau-input-row {
+    display: flex; align-items: center; gap: 0.4rem;
+  }
+  .sol-panneau-input-row input[type="number"] {
+    padding: 0.3rem 0.5rem; border: 1px solid #fcd34d; border-radius: 5px;
+    font-size: 0.88rem; font-family: inherit; background: white; width: 90px;
+  }
+  .sol-panneau-input-row input[type="number"]:focus { border-color: #f59e0b; outline: none; }
+  .sol-panneau-unit { font-size: 0.78rem; color: #92400e; white-space: nowrap; }
+  /* Paragraphe explicatif */
+  .sol-panneau-note {
+    flex: 1; font-size: 0.77rem; color: #78350f; margin: 0;
+    line-height: 1.55; background: #fef3c7; border-radius: 5px;
+    padding: 0.5rem 0.75rem;
+  }
+
+  /* Zone d'import global */
+  .sol-import-zone {
+    border: 2px dashed #fcd34d; border-radius: 8px;
+    background: #fffbeb; padding: 0.75rem 1rem;
+    margin-bottom: 1rem;
+  }
+  .sol-import-zone-titre {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: #92400e; margin-bottom: 0.5rem;
+  }
+  .sol-import-zone-row {
+    display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+  }
+  .sol-import-zone-hint {
+    font-size: 0.78rem; color: #92400e; flex: 1;
+  }
+  #sol-import-global-status { margin-top: 0.4rem; }
+
+  /* Modal sélection d'unité */
+  .sol-modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.45); z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .sol-modal-overlay.visible { display: flex; }
+  .sol-modal {
+    background: white; border-radius: 10px; padding: 1.5rem;
+    max-width: 380px; width: 90%; box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  }
+  .sol-modal-titre {
+    font-weight: 700; font-size: 1rem; margin-bottom: 0.5rem; color: #1e293b;
+  }
+  .sol-modal-desc { font-size: 0.85rem; color: #64748b; margin-bottom: 1rem; }
+  .sol-modal-desc strong { color: #1e293b; }
+  .sol-unite-options { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1rem; }
+  .sol-unite-options label {
+    display: flex; align-items: center; gap: 0.5rem;
+    font-size: 0.88rem; cursor: pointer; padding: 0.35rem 0.5rem;
+    border-radius: 5px; border: 1px solid transparent;
+  }
+  .sol-unite-options label:hover { background: #f8fafc; border-color: #e2e8f0; }
+  .sol-unite-options label:has(input:checked) { background: #fffbeb; border-color: #fcd34d; }
+  .sol-unite-autre-input {
+    padding: 0.25rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 4px;
+    font-size: 0.85rem; width: 100px; font-family: inherit;
+  }
+  .sol-unite-autre-input:focus { border-color: #f59e0b; outline: none; }
+  .sol-modal-footer {
+    display: flex; justify-content: flex-end; gap: 0.6rem; margin-top: 0.5rem;
+  }
+  .sol-modal-footer button {
+    padding: 0.4rem 1rem; border-radius: 6px; font-size: 0.88rem;
+    cursor: pointer; border: 1px solid #e2e8f0; font-family: inherit;
+  }
+  .sol-modal-footer .sol-btn-confirm {
+    background: #f59e0b; color: white; border-color: #f59e0b; font-weight: 600;
+  }
+
+  .sol-toolbar {
+    display: flex; justify-content: flex-end;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Boutons */
+  .sol-btn {
+    padding: 0.35rem 0.9rem; border: none; border-radius: 6px;
+    font-size: 0.85rem; cursor: pointer; transition: opacity 0.15s;
+    font-family: inherit;
+  }
+  .sol-btn:hover { opacity: 0.85; }
+  .sol-btn-primary  { background: #f59e0b; color: white; font-weight: 600; }
+  .sol-btn-save     { background: #1d4ed8; color: white; font-weight: 600; padding: 0.45rem 1.2rem; }
+  .sol-btn-upload   { background: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; cursor: pointer; }
+  .sol-btn-run      { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+  .sol-btn-sm       { padding: 0.25rem 0.65rem; font-size: 0.78rem; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+  .sol-btn-del      {
+    background: none; border: none; color: #ef4444; cursor: pointer;
+    font-size: 1rem; padding: 0 0.25rem; line-height: 1;
+    margin-left: auto; flex-shrink: 0;
+  }
+  .sol-btn-del:hover { color: #b91c1c; }
+
+  /* Fusion */
+  .sol-merge-row {
+    display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap;
+    margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px dashed #e2e8f0;
+  }
+  .sol-merge-row label { font-size: 0.82rem; color: #475569; }
+  .sol-merge-row select {
+    padding: 0.28rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 5px;
+    font-size: 0.82rem; font-family: inherit; flex: 1; min-width: 0;
+  }
+  .sol-merge-row select:focus { border-color: #f59e0b; outline: none; }
+  .sol-btn-merge {
+    background: #f0fdf4; color: #15803d; border: 1px solid #bbf7d0;
+    padding: 0.28rem 0.7rem; border-radius: 5px; font-size: 0.82rem; cursor: pointer;
+  }
+  .sol-btn-merge:hover { background: #dcfce7; }
+
+  /* Sources */
+  .sol-source {
+    border: 1px solid #e2e8f0; border-radius: 8px;
+    margin-bottom: 0.6rem; overflow: hidden;
+  }
+  .sol-source-header {
+    display: flex; align-items: center; gap: 0.6rem;
+    padding: 0.6rem 0.75rem; background: #f8fafc;
+    cursor: pointer; user-select: none;
+  }
+  .sol-source-header:hover { background: #f1f5f9; }
+  .sol-toggle-icon { color: #94a3b8; font-size: 0.7rem; flex-shrink: 0; }
+  .sol-source-name {
+    border: 1px solid transparent; border-radius: 4px;
+    padding: 0.15rem 0.4rem; font-size: 0.9rem; font-weight: 600;
+    background: transparent; font-family: inherit; flex: 1; min-width: 0;
+  }
+  .sol-source-name:hover { border-color: #cbd5e1; background: white; }
+  .sol-source-name:focus { border-color: #f59e0b; outline: none; background: white; }
+  .sol-source-badge {
+    background: #fef3c7; color: #92400e;
+    font-size: 0.72rem; padding: 0.1rem 0.45rem; border-radius: 4px;
+    white-space: nowrap; flex-shrink: 0;
+  }
+  .sol-source-pts {
+    color: #64748b; font-size: 0.78rem; white-space: nowrap; flex-shrink: 0;
+  }
+
+  /* Corps de la source */
+  .sol-source-body { padding: 0.75rem; background: white; border-top: 1px solid #f1f5f9; }
+
+  .sol-section { margin-bottom: 1rem; }
+  .sol-section:last-child { margin-bottom: 0; }
+  .sol-section-titre {
+    font-size: 0.75rem; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 0.6px; color: #94a3b8; margin-bottom: 0.5rem;
+  }
+
+  /* Config */
+  .sol-config-row {
+    display: flex; gap: 1rem; flex-wrap: wrap;
+    background: #f8fafc; border: 1px solid #e2e8f0;
+    border-radius: 6px; padding: 0.6rem 0.75rem;
+  }
+  .sol-config-row label {
+    display: flex; align-items: center; gap: 0.4rem;
+    font-size: 0.85rem; color: #475569;
+  }
+  .sol-config-row select,
+  .sol-config-row input[type="number"] {
+    padding: 0.3rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 5px;
+    font-size: 0.85rem; font-family: inherit;
+  }
+  .sol-config-row select:focus,
+  .sol-config-row input:focus { border-color: #f59e0b; outline: none; }
+
+  /* Actions données */
+  .sol-data-actions {
+    display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+    margin-bottom: 0.5rem;
+  }
+  .sol-add-point {
+    display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap;
+  }
+  .sol-add-point input[type="datetime-local"],
+  .sol-add-point input[type="number"] {
+    padding: 0.3rem 0.5rem; border: 1px solid #cbd5e1; border-radius: 5px;
+    font-size: 0.82rem; font-family: inherit;
+  }
+  .sol-add-point input[type="number"] { width: 110px; }
+  .sol-add-point input:focus { border-color: #f59e0b; outline: none; }
+  .sol-meta { font-size: 0.8rem; color: #64748b; margin-bottom: 0.4rem; }
+
+  /* Status */
+  .sol-status {
+    font-size: 0.8rem; color: #059669; min-height: 1.2rem;
+    margin-top: 0.3rem;
+  }
+  .sol-status.err { color: #dc2626; }
+
+  /* Script */
+  .sol-script {
+    width: 100%; box-sizing: border-box;
+    border: 1px solid #cbd5e1; border-radius: 6px;
+    font-family: monospace; font-size: 0.82rem;
+    padding: 0.5rem 0.65rem; resize: vertical; min-height: 120px;
+    color: #1e293b; background: #f8fafc;
+  }
+  .sol-script:focus { border-color: #f59e0b; outline: none; background: white; }
+  .sol-script-hint {
+    font-size: 0.75rem; color: #94a3b8; margin-bottom: 0.35rem; font-family: monospace;
+  }
+  .sol-script-row {
+    display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap;
+    margin-top: 0.5rem;
+  }
+  .sol-script-row label {
+    display: flex; align-items: center; gap: 0.35rem;
+    font-size: 0.83rem; color: #475569;
+  }
+  .sol-script-row input[type="number"] {
+    width: 60px; padding: 0.3rem 0.4rem; border: 1px solid #cbd5e1;
+    border-radius: 5px; font-size: 0.83rem; font-family: inherit;
+  }
+  .sol-script-row input:focus { border-color: #f59e0b; outline: none; }
+  .sol-last-exec { font-size: 0.78rem; color: #94a3b8; margin-left: auto; }
+
+  /* Visualisation */
+  .sol-visu-toggle { margin-bottom: 0.5rem; }
+  .sol-data-info { font-size: 0.78rem; color: #64748b; margin-bottom: 0.4rem; }
+  .sol-table {
+    width: 100%; border-collapse: collapse; font-size: 0.82rem;
+    margin-top: 0.25rem;
+  }
+  .sol-table th {
+    text-align: left; background: #f1f5f9; padding: 0.3rem 0.6rem;
+    border-bottom: 2px solid #e2e8f0; color: #475569; font-size: 0.78rem;
+  }
+  .sol-table td {
+    padding: 0.25rem 0.6rem; border-bottom: 1px solid #f1f5f9;
+    font-family: monospace;
+  }
+  .sol-table tr:hover td { background: #fffbeb; }
+  .sol-loading { font-size: 0.82rem; color: #94a3b8; padding: 0.5rem 0; }
+  .sol-empty-data { font-size: 0.82rem; color: #94a3b8; padding: 0.5rem 0; }
+
+  .sol-empty { color: #94a3b8; font-size: 0.88rem; padding: 1rem 0; text-align: center; }
+
+  /* Footer */
+  .sol-footer {
+    display: flex; justify-content: flex-end;
+    margin-top: 1rem; padding-top: 0.75rem;
+    border-top: 1px solid #e2e8f0;
+  }
+</style>
+
+<!-- Modal sélection d'unité -->
+<div class="sol-modal-overlay" id="sol-modal-unite">
+  <div class="sol-modal">
+    <div class="sol-modal-titre">⚠️ Unité non reconnue</div>
+    <div class="sol-modal-desc">
+      Aucune unité connue n'a été détectée dans l'en-tête de la colonne :<br>
+      <strong id="sol-modal-source-nom"></strong>
+    </div>
+    <div class="sol-unite-options">
+      <label><input type="radio" name="sol-unite-choice" value="lux"> Luminosité (lux)</label>
+      <label><input type="radio" name="sol-unite-choice" value="W"> Puissance (W)</label>
+      <label><input type="radio" name="sol-unite-choice" value="kW"> Puissance (kW)</label>
+      <label><input type="radio" name="sol-unite-choice" value="kWh"> Énergie (kWh)</label>
+      <label>
+        <input type="radio" name="sol-unite-choice" value="autre">
+        Autre&nbsp;:
+        <input type="text" class="sol-unite-autre-input" id="sol-unite-autre-val"
+          placeholder="ex&nbsp;: °C" onclick="this.closest('label').querySelector('input[type=radio]').checked=true" />
+      </label>
+    </div>
+    <div class="sol-modal-footer">
+      <button onclick="_solUniteAnnuler()">Annuler</button>
+      <button class="sol-btn-confirm" onclick="_solUniteConfirmer()">Importer</button>
+    </div>
+  </div>
+</div>
+
+<div class="sol-panel">
+  <div class="sol-brand">
+    <span class="sol-logo">☀ Solaire</span>
+    <span class="sol-brand-desc">Sources de données brutes (luminosité / puissance)</span>
+  </div>
+
+  <!-- Paramètres panneau solaire -->
+  <div class="sol-panneau-section">
+    <div class="sol-panneau-titre">⚡ Paramètres panneau solaire</div>
+
+    <!-- Ligne 1 : coût + paragraphe -->
+    <div class="sol-panneau-row1">
+      <div class="sol-panneau-field">
+        <label>Coût par panneau</label>
+        <div class="sol-panneau-input-row">
+          <input type="number" min="0" step="1" id="sol-p-cout_panneau" value="900" />
+          <span class="sol-panneau-unit">€ / panneau</span>
+        </div>
+      </div>
+      <p class="sol-panneau-note">Estimation pour une petite installation : 900 € par panneau (moins de 3 kWc). Estimation pour une installation moyenne : 750 € par panneau (autour de 6 kWc). Estimation pour une grosse installation : environ 700 € par panneau (plus de 9 kWc).<br><br>Ne pas oublier les coûts sur la durée de vie : entretien et nettoyage des panneaux, et surtout le remplacement de l'onduleur (généralement nécessaire après 10–15 ans). Prévoir environ 20 % du coût total en plus sur la durée de vie de l'installation.<br><br>Estimation réalisée début 2026, à titre indicatif et hors aides éventuelles (prime à l'autoconsommation, TVA réduite). Si vous avez un devis, remplacez ce montant par le montant total du devis.</p>
+    </div>
+
+    <!-- Ligne 2 : 4 champs + bouton reset -->
+    <div class="sol-panneau-row2">
+      <div class="sol-panneau-field">
+        <label>Puissance crête</label>
+        <div class="sol-panneau-input-row">
+          <input type="number" min="1" step="1" id="sol-p-puissance_wc" value="425" />
+          <span class="sol-panneau-unit">Wc / panneau</span>
+        </div>
+      </div>
+      <div class="sol-panneau-field">
+        <label>Performance Ratio</label>
+        <div class="sol-panneau-input-row">
+          <input type="number" min="0" max="100" step="1" id="sol-p-performance_ratio" value="80" />
+          <span class="sol-panneau-unit">%</span>
+        </div>
+      </div>
+      <div class="sol-panneau-field">
+        <label>Dégradation annuelle</label>
+        <div class="sol-panneau-input-row">
+          <input type="number" min="0" max="10" step="0.1" id="sol-p-degradation_pct_an" value="0.5" />
+          <span class="sol-panneau-unit">% / an</span>
+        </div>
+      </div>
+      <div class="sol-panneau-field">
+        <label>Durée de vie</label>
+        <div class="sol-panneau-input-row">
+          <input type="number" min="1" step="1" id="sol-p-duree_vie_ans" value="25" />
+          <span class="sol-panneau-unit">ans</span>
+        </div>
+      </div>
+      <div class="sol-panneau-field">
+        <label>Nb max de panneaux</label>
+        <div class="sol-panneau-input-row">
+          <input type="number" min="1" step="1" id="sol-p-nb_panneaux_max" value="20" />
+          <span class="sol-panneau-unit">panneaux</span>
+        </div>
+      </div>
+      <div class="sol-panneau-field" style="justify-content:flex-end; margin-left:auto;">
+        <label style="visibility:hidden">‌</label>
+        <div class="sol-panneau-input-row">
+          <button class="sol-btn sol-btn-sm" onclick="_solResetPanneau()" title="Restaurer les valeurs par défaut">↺ Valeurs par défaut</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Zone d'import global : détection automatique de la source depuis l'en-tête CSV -->
+  <div class="sol-import-zone">
+    <div class="sol-import-zone-titre">📂 Importer des données (CSV)</div>
+    <div class="sol-import-zone-row">
+      <label class="sol-btn sol-btn-upload">
+        Choisir un fichier…
+        <input type="file" accept=".csv,.txt" multiple style="display:none"
+          onchange="_solImportCsvAuto(this)" />
+      </label>
+      <span class="sol-import-zone-hint">
+        La source est détectée depuis l'en-tête de colonne du CSV.
+        Une nouvelle source est créée automatiquement si elle n'existe pas encore.
+      </span>
+    </div>
+    <div id="sol-import-global-status" class="sol-status"></div>
+  </div>
+
+  <div class="sol-toolbar">
+    <button class="sol-btn sol-btn-primary" onclick="_solAddSource()">+ Ajouter une source manuellement</button>
+  </div>
+
+  <div id="sol-sources-list">
+    <div class="sol-empty">Chargement…</div>
+  </div>
+
+  <div class="sol-footer">
+    <button class="sol-btn sol-btn-save" id="sol-btn-save" onclick="_solSauvegarder()">💾 Sauvegarder</button>
+  </div>
+</div>
+
+<script>
+(function () {
+
+  // ─── État ──────────────────────────────────────────────────────────────────
+  var _sources = [];
+  var _pendingImport = null;   // {fichier, statusEl, restants, resultats, onDone}
+
+  var _PANNEAU_DEFAUT = {
+    cout_panneau: 900, puissance_wc: 425,
+    performance_ratio: 80, degradation_pct_an: 0.5, duree_vie_ans: 25, nb_panneaux_max: 20,
+  };
+
+  // ─── Helpers panneau ───────────────────────────────────────────────────────
+  function _getPanneauFields() {
+    var keys = Object.keys(_PANNEAU_DEFAUT);
+    var out = {};
+    keys.forEach(function (k) {
+      var el = document.getElementById('sol-p-' + k);
+      out[k] = el ? parseFloat(el.value) || _PANNEAU_DEFAUT[k] : _PANNEAU_DEFAUT[k];
+    });
+    return out;
+  }
+
+  function _setPanneauFields(data) {
+    if (!data) return;
+    Object.keys(_PANNEAU_DEFAUT).forEach(function (k) {
+      var el = document.getElementById('sol-p-' + k);
+      if (el && data[k] != null) el.value = data[k];
+    });
+  }
+
+  window._solResetPanneau = function () {
+    _setPanneauFields(_PANNEAU_DEFAUT);
+  };
+
+  // ─── API publique panel ────────────────────────────────────────────────────
+  window.setParams_solaire = function (data) {
+    _sources = (data && Array.isArray(data.sources))
+      ? JSON.parse(JSON.stringify(data.sources))
+      : [];
+    _setPanneauFields(data && data.panneau);
+    _render();
+  };
+
+  window.getParams_solaire = function () {
+    return { sources: _sources, panneau: _getPanneauFields() };
+  };
+
+  // ─── Rendu ─────────────────────────────────────────────────────────────────
+  function _render(keepOpen) {
+    var container = document.getElementById('sol-sources-list');
+    if (!container) return;
+
+    // Mémoriser les accordéons ouverts
+    var ouverts = keepOpen || {};
+    if (!keepOpen) {
+      _sources.forEach(function (s, i) {
+        var b = document.getElementById('sol-body-' + i);
+        if (b && b.style.display !== 'none') ouverts[i] = true;
+      });
+    }
+
+    if (!_sources.length) {
+      container.innerHTML = '<div class="sol-empty">Aucune source configurée.</div>';
+      return;
+    }
+
+    container.innerHTML = _sources.map(function (src, idx) {
+      return _renderSource(src, idx);
+    }).join('');
+
+    // Rétablir les accordéons ouverts
+    Object.keys(ouverts).forEach(function (i) {
+      var b = document.getElementById('sol-body-' + i);
+      var ic = document.getElementById('sol-icon-' + i);
+      if (b) b.style.display = 'block';
+      if (ic) ic.textContent = '▼';
+    });
+
+    // Remplir les textareas après injection (évite les problèmes d'échappement HTML)
+    _sources.forEach(function (src, idx) {
+      var ta = document.querySelector('[data-idx="' + idx + '"] .sol-script');
+      if (ta) {
+        ta.value = src.script || '';
+        ta.oninput = function () { _sources[idx].script = this.value; };
+      }
+    });
+  }
+
+  function _renderSource(src, idx) {
+    var typeOpts = ['lux', 'W', 'autre'].map(function (t) {
+      return '<option value="' + t + '"' + (src.type === t ? ' selected' : '') + '>'
+        + _typeLabel(t) + '</option>';
+    }).join('');
+
+    var derniereExec = src.script_derniere_exec
+      ? new Date(src.script_derniere_exec).toLocaleString('fr-FR')
+      : 'Jamais';
+
+    var periodeMeta = (src.premier_ts && src.dernier_ts)
+      ? '<div class="sol-meta">Période\u00a0: '
+        + src.premier_ts.slice(0, 10) + ' → ' + src.dernier_ts.slice(0, 10)
+        + ' — ' + (src.total_points || 0) + '\u00a0pts</div>'
+      : (src.total_points ? '<div class="sol-meta">' + src.total_points + '\u00a0pts</div>' : '');
+
+    return '<div class="sol-source" data-idx="' + idx + '">'
+
+      // En-tête accordéon
+      + '<div class="sol-source-header" onclick="_solToggle(' + idx + ')">'
+        + '<span class="sol-toggle-icon" id="sol-icon-' + idx + '">▶</span>'
+        + '<input class="sol-source-name" type="text" value="' + _esc(src.nom || 'Source') + '" '
+          + 'onclick="event.stopPropagation()" '
+          + 'onchange="_solField(' + idx + ',\'nom\',this.value)" />'
+        + '<span class="sol-source-badge">' + _typeLabel(src.type) + '</span>'
+        + (src.total_points ? '<span class="sol-source-pts">' + src.total_points + '\u00a0pts</span>' : '')
+        + '<button class="sol-btn-del" onclick="_solDelete(' + idx + ',event)" title="Supprimer">✕</button>'
+      + '</div>'
+
+      // Corps (masqué par défaut)
+      + '<div class="sol-source-body" id="sol-body-' + idx + '" style="display:none">'
+
+        // Config
+        + '<div class="sol-section">'
+          + '<div class="sol-section-titre">Configuration</div>'
+          + '<div class="sol-config-row">'
+            + '<label>Type'
+              + '<select onchange="_solField(' + idx + ',\'type\',this.value)">' + typeOpts + '</select>'
+            + '</label>'
+            + '<label>Coefficient de conversion'
+              + '<input type="number" step="any" value="' + (src.coeff != null ? src.coeff : 1) + '" '
+                + 'onchange="_solField(' + idx + ',\'coeff\',parseFloat(this.value)||1)" />'
+            + '</label>'
+          + '</div>'
+        + '</div>'
+
+        // Données
+        + '<div class="sol-section">'
+          + '<div class="sol-section-titre">Données</div>'
+          + periodeMeta
+          + '<div class="sol-data-actions">'
+            + '<div class="sol-add-point">'
+              + '<input type="datetime-local" id="sol-ts-' + idx + '" />'
+              + '<input type="number" step="any" id="sol-val-' + idx + '" placeholder="Valeur" />'
+              + '<button class="sol-btn sol-btn-sm" onclick="_solAddPoint(' + idx + ')">+ Ajouter</button>'
+            + '</div>'
+          + '</div>'
+          + '<div id="sol-data-status-' + idx + '" class="sol-status"></div>'
+          + _renderMergeRow(src, idx)
+          + '<div class="sol-visu-toggle">'
+            + '<button class="sol-btn sol-btn-sm" onclick="_solLoadData(' + idx + ')">Afficher les données</button>'
+          + '</div>'
+          + '<div id="sol-data-table-' + idx + '"></div>'
+        + '</div>'
+
+        // Script
+        + '<div class="sol-section">'
+          + '<div class="sol-section-titre">Script Python</div>'
+          + '<div class="sol-script-hint"># Le script doit définir : resultats = [{"ts": "...", "valeur": ...}, ...]</div>'
+          + '<textarea class="sol-script" rows="8" placeholder="# Exemple :&#10;import datetime&#10;resultats = [{&quot;ts&quot;: datetime.datetime.now().isoformat(), &quot;valeur&quot;: 1234.0}]"></textarea>'
+          + '<div class="sol-script-row">'
+            + '<label>Intervalle'
+              + '<input type="number" min="1" step="1" value="' + (src.script_intervalle_h || 24) + '" '
+                + 'onchange="_solField(' + idx + ',\'script_intervalle_h\',parseInt(this.value)||24)" />'
+              + 'h'
+            + '</label>'
+            + '<button class="sol-btn sol-btn-run" onclick="_solRunScript(' + idx + ')">▶ Exécuter</button>'
+            + '<span class="sol-last-exec">Dernière exécution\u00a0: ' + derniereExec + '</span>'
+          + '</div>'
+          + '<div id="sol-script-status-' + idx + '" class="sol-status"></div>'
+        + '</div>'
+
+      + '</div>'
+    + '</div>';
+  }
+
+  function _renderMergeRow(src, idx) {
+    // N'afficher que si au moins une autre source existe
+    var autres = _sources.filter(function (s) { return s.id !== src.id; });
+    if (!autres.length) return '';
+    var opts = autres.map(function (s) {
+      return '<option value="' + _esc(s.id) + '">' + _esc(s.nom) + '</option>';
+    }).join('');
+    return '<div class="sol-merge-row">'
+      + '<label>⊕ Fusionner avec</label>'
+      + '<select id="sol-merge-sel-' + idx + '">' + opts + '</select>'
+      + '<button class="sol-btn-merge" onclick="_solMerge(' + idx + ')">Fusionner</button>'
+    + '</div>';
+  }
+
+  function _typeLabel(t) {
+    if (t === 'lux') return 'Luminosité (lux)';
+    if (t === 'W')   return 'Puissance (W)';
+    return 'Autre';
+  }
+
+  function _esc(s) {
+    return String(s || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+  }
+
+  // ─── Accordéon ─────────────────────────────────────────────────────────────
+  window._solToggle = function (idx) {
+    var b  = document.getElementById('sol-body-' + idx);
+    var ic = document.getElementById('sol-icon-' + idx);
+    if (!b) return;
+    var ouvert = b.style.display !== 'none';
+    b.style.display = ouvert ? 'none' : 'block';
+    if (ic) ic.textContent = ouvert ? '▶' : '▼';
+  };
+
+  // ─── Mise à jour des champs ────────────────────────────────────────────────
+  window._solField = function (idx, key, value) {
+    if (_sources[idx] != null) _sources[idx][key] = value;
+  };
+
+  // ─── Ajouter / supprimer source ────────────────────────────────────────────
+  window._solAddSource = function () {
+    var ouverts = {};
+    _sources.forEach(function (s, i) {
+      var b = document.getElementById('sol-body-' + i);
+      if (b && b.style.display !== 'none') ouverts[i] = true;
+    });
+    var id = 'source_' + Date.now().toString(36);
+    _sources.push({
+      id: id, nom: 'Nouvelle source',
+      type: 'lux', coeff: 128000,
+      script: '', script_intervalle_h: 24, script_derniere_exec: null,
+    });
+    var newIdx = _sources.length - 1;
+    ouverts[newIdx] = true;   // ouvrir le nouvel accordéon
+    _render(ouverts);
+  };
+
+  window._solDelete = function (idx, evt) {
+    evt.stopPropagation();
+    if (!confirm('Supprimer cette source ?\n(La configuration sera perdue. Les données restent dans le fichier de données.)')) return;
+    var ouverts = {};
+    _sources.forEach(function (s, i) {
+      var b = document.getElementById('sol-body-' + i);
+      if (i !== idx && b && b.style.display !== 'none') {
+        // Recalibrer l'index après suppression
+        ouverts[i < idx ? i : i - 1] = true;
+      }
+    });
+    _sources.splice(idx, 1);
+    _render(ouverts);
+  };
+
+  // ─── Import CSV global (détection automatique de la source) ─────────────────
+  window._solImportCsvAuto = function (input) {
+    if (!input.files || !input.files.length) return;
+    var statusEl = document.getElementById('sol-import-global-status');
+    var fichiers = Array.prototype.slice.call(input.files);
+    input.value = '';
+    _solLancerImports(fichiers, statusEl);
+  };
+
+  function _solLancerImports(fichiers, statusEl) {
+    var resultats = [];
+    var restants  = fichiers.length;
+
+    function _onFichierDone() {
+      restants--;
+      if (restants === 0) {
+        var hasErr = resultats.some(function (r) { return r.charAt(0) === '✗'; });
+        _setStatus(statusEl, resultats.join(' | '), hasErr);
+        _refreshAll();
+      }
+    }
+
+    fichiers.forEach(function (fichier) {
+      _setStatus(statusEl, 'Import de ' + fichier.name + '…', false);
+      _solUploadFichier(fichier, null, statusEl, function (msg, isErr) {
+        resultats.push(msg);
+        _onFichierDone();
+      });
+    });
+  }
+
+  // Envoie un fichier CSV avec une unité optionnelle.
+  // callback(msg, isErr) est appelé à la fin.
+  function _solUploadFichier(fichier, unite, statusEl, callback) {
+    var fd = new FormData();
+    fd.append('file', fichier);
+    if (unite) fd.append('unite', unite);
+
+    fetch('/api/solaire/import_csv', { method: 'POST', body: fd })
+      .then(function (r) { return r.json(); })
+      .then(function (rep) {
+        if (!rep.status) {
+          callback('✗ ' + fichier.name + ' : ' + (rep.error || 'Erreur'), true);
+          return;
+        }
+        var d = rep.data;
+        if (d.unite_requise) {
+          // Stocker le contexte et afficher la modal de sélection d'unité
+          _pendingImport = { fichier: fichier, statusEl: statusEl, callback: callback };
+          document.getElementById('sol-modal-source-nom').textContent = d.source_nom;
+          // Réinitialiser le formulaire
+          document.querySelectorAll('input[name="sol-unite-choice"]').forEach(function (r) { r.checked = false; });
+          document.getElementById('sol-unite-autre-val').value = '';
+          document.getElementById('sol-modal-unite').classList.add('visible');
+        } else {
+          var msg = '✓ ' + d.source_nom
+            + (d.creee ? ' (créée)' : '')
+            + ' — ' + d.importes + ' pts'
+            + (d.ignores ? ' (' + d.ignores + ' ignorées)' : '');
+          callback(msg, false);
+        }
+      })
+      .catch(function (e) { callback('✗ ' + fichier.name + ' : ' + e.message, true); });
+  }
+
+  // ─── Modal unité ───────────────────────────────────────────────────────────
+  window._solUniteAnnuler = function () {
+    document.getElementById('sol-modal-unite').classList.remove('visible');
+    if (_pendingImport) {
+      _pendingImport.callback('✗ Import annulé (unité non sélectionnée)', true);
+      _pendingImport = null;
+    }
+  };
+
+  window._solUniteConfirmer = function () {
+    var selected = document.querySelector('input[name="sol-unite-choice"]:checked');
+    if (!selected) { alert('Veuillez sélectionner une unité.'); return; }
+    var unite = selected.value;
+    if (unite === 'autre') {
+      unite = document.getElementById('sol-unite-autre-val').value.trim();
+      if (!unite) { alert('Veuillez saisir la valeur de l\'unité.'); return; }
+    }
+    document.getElementById('sol-modal-unite').classList.remove('visible');
+
+    var pending = _pendingImport;
+    _pendingImport = null;
+    if (!pending) return;
+
+    _solUploadFichier(pending.fichier, unite, pending.statusEl, function (msg, isErr) {
+      var statusEl = document.getElementById('sol-import-global-status');
+      _setStatus(statusEl, msg, isErr);
+      if (!isErr) _refreshAll();
+    });
+  };
+
+  // ─── Ajout manuel ──────────────────────────────────────────────────────────
+  window._solAddPoint = function (idx) {
+    var src = _sources[idx];
+    if (!src) return;
+    var tsEl  = document.getElementById('sol-ts-'  + idx);
+    var valEl = document.getElementById('sol-val-' + idx);
+    if (!tsEl || !valEl) return;
+    var ts     = tsEl.value;
+    var valeur = parseFloat(valEl.value);
+    var statusEl = document.getElementById('sol-data-status-' + idx);
+    if (!ts || isNaN(valeur)) {
+      _setStatus(statusEl, '✗ Horodatage et valeur requis', true);
+      return;
+    }
+    _setStatus(statusEl, 'Ajout en cours…', false);
+    _apiScript('ADD_POINT', { source_id: src.id, ts: ts, valeur: valeur })
+      .then(function (rep) {
+        if (rep.status) {
+          _setStatus(statusEl, '✓ Point ajouté', false);
+          tsEl.value = ''; valEl.value = '';
+          _refreshStats(idx, src.id);
+        } else {
+          _setStatus(statusEl, '✗ ' + (rep.error || 'Erreur'), true);
+        }
+      });
+  };
+
+  // ─── Exécution script ──────────────────────────────────────────────────────
+  window._solRunScript = function (idx) {
+    var src = _sources[idx];
+    if (!src) return;
+    var statusEl = document.getElementById('sol-script-status-' + idx);
+    _setStatus(statusEl, 'Exécution en cours…', false);
+    _apiScript('RUN_SCRIPT', { source_id: src.id })
+      .then(function (rep) {
+        if (rep.status) {
+          var n = (rep.data && rep.data.importes != null) ? rep.data.importes : '?';
+          _setStatus(statusEl, '✓ ' + n + ' points importés', false);
+          _refreshStats(idx, src.id);
+        } else {
+          _setStatus(statusEl, '✗ ' + (rep.error || 'Erreur'), true);
+        }
+      })
+      .catch(function (e) { _setStatus(statusEl, '✗ ' + e.message, true); });
+  };
+
+  // ─── Fusion de sources ─────────────────────────────────────────────────────
+  window._solMerge = function (idx) {
+    var src = _sources[idx];
+    if (!src) return;
+    var sel = document.getElementById('sol-merge-sel-' + idx);
+    if (!sel) return;
+    var idFusionner = sel.value;
+    var nomFusionner = sel.options[sel.selectedIndex] ? sel.options[sel.selectedIndex].text : idFusionner;
+    var srcFusionner = _sources.filter(function (s) { return s.id === idFusionner; })[0];
+    var typeDifferent = srcFusionner && srcFusionner.type !== src.type;
+
+    var msg = 'Fusionner "' + nomFusionner + '" dans "' + src.nom + '" ?\n\n'
+      + '• Les données de "' + nomFusionner + '" seront absorbées dans "' + src.nom + '".\n'
+      + '• En cas de conflit de timestamp, les données de "' + src.nom + '" sont conservées.\n'
+      + '• "' + nomFusionner + '" sera supprimée définitivement.';
+
+    if (typeDifferent) {
+      msg += '\n\n⚠️ Attention : les deux sources ont des types différents'
+        + ' (' + _typeLabel(src.type) + ' ≠ ' + _typeLabel(srcFusionner.type) + ').'
+        + '\nLes données fusionnées auront le type de la cible : ' + _typeLabel(src.type) + '.';
+    }
+
+    if (!confirm(msg)) return;
+
+    var statusEl = document.getElementById('sol-data-status-' + idx);
+    _setStatus(statusEl, 'Fusion en cours…', false);
+
+    _apiScript('MERGE_SOURCES', { source_id_cible: src.id, source_id_fusionner: idFusionner })
+      .then(function (rep) {
+        if (rep.status) {
+          var n = rep.data && rep.data.total_points != null ? rep.data.total_points : '?';
+          _setStatus(statusEl, '✓ Fusion effectuée — ' + n + ' points', false);
+          _refreshAll();
+        } else {
+          _setStatus(statusEl, '✗ ' + (rep.error || 'Erreur'), true);
+        }
+      })
+      .catch(function (e) { _setStatus(statusEl, '✗ ' + e.message, true); });
+  };
+
+  // ─── Visualisation des données ─────────────────────────────────────────────
+  window._solLoadData = function (idx) {
+    var src = _sources[idx];
+    if (!src) return;
+    var container = document.getElementById('sol-data-table-' + idx);
+    if (!container) return;
+    container.innerHTML = '<div class="sol-loading">Chargement…</div>';
+    _apiScript('GET_DATA', { source_id: src.id, limit: 100, offset: 0 })
+      .then(function (rep) {
+        if (!rep.status) {
+          container.innerHTML = '<div class="sol-status err">' + (rep.error || 'Erreur') + '</div>';
+          return;
+        }
+        var d   = rep.data;
+        var pts = d.points || [];
+        if (!pts.length) {
+          container.innerHTML = '<div class="sol-empty-data">Aucune donnée.</div>';
+          return;
+        }
+        var html = '<div class="sol-data-info">'
+          + d.total + ' points au total'
+          + (d.total > 100 ? ' — 100 plus récents affichés' : '')
+          + '</div>'
+          + '<table class="sol-table"><thead><tr><th>Horodatage</th><th>Valeur</th></tr></thead><tbody>';
+        pts.forEach(function (p) {
+          html += '<tr><td>' + p.ts.slice(0, 19).replace('T', ' ') + '</td>'
+                + '<td>' + Number(p.valeur).toFixed(3) + '</td></tr>';
+        });
+        html += '</tbody></table>';
+        container.innerHTML = html;
+      })
+      .catch(function (e) {
+        container.innerHTML = '<div class="sol-status err">' + e.message + '</div>';
+      });
+  };
+
+  // ─── Sauvegarde ────────────────────────────────────────────────────────────
+  window._solSauvegarder = function () {
+    var btn = document.getElementById('sol-btn-save');
+    if (btn) { btn.textContent = 'Enregistrement\u2026'; btn.disabled = true; }
+    fetch('/api/save_params', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ groupe: 'solaire', params: { sources: _sources, panneau: _getPanneauFields() } }),
+    })
+      .then(function (r) { return r.json(); })
+      .then(function (rep) {
+        if (btn) {
+          btn.textContent = rep.status ? '\u2713 Sauvegardé' : '\u2717 Erreur';
+          btn.disabled = false;
+          setTimeout(function () { if (btn) btn.textContent = '💾 Sauvegarder'; }, 2000);
+        }
+      })
+      .catch(function () { if (btn) { btn.textContent = '\u2717 Erreur'; btn.disabled = false; } });
+  };
+
+  // ─── Helpers ───────────────────────────────────────────────────────────────
+  function _apiScript(mode, params) {
+    return fetch('/api/script', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ script: 'solaire', mode: mode, params: params || {} }),
+    }).then(function (r) { return r.json(); });
+  }
+
+  function _setStatus(el, msg, isErr) {
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'sol-status' + (isErr ? ' err' : '');
+  }
+
+  function _refreshStats(idx, sourceId) {
+    _apiScript('GET', {}).then(function (rep) {
+      if (!rep.status || !rep.data || !rep.data.sources) return;
+      var srv = rep.data.sources.filter(function (s) { return s.id === sourceId; })[0];
+      if (srv && _sources[idx]) {
+        _sources[idx].total_points = srv.total_points;
+        _sources[idx].premier_ts   = srv.premier_ts;
+        _sources[idx].dernier_ts   = srv.dernier_ts;
+      }
+      _render();
+    });
+  }
+
+  // Recharge toutes les sources depuis le serveur (après import CSV auto)
+  function _refreshAll() {
+    _apiScript('GET', {}).then(function (rep) {
+      if (!rep.status || !rep.data || !rep.data.sources) return;
+      // Fusionner : conserver les modifications locales (script, coeff…) non encore sauvegardées
+      var serv = rep.data.sources;
+      serv.forEach(function (srv) {
+        var local = _sources.filter(function (s) { return s.id === srv.id; })[0];
+        if (local) {
+          // Mettre à jour uniquement les stats de données
+          local.total_points = srv.total_points;
+          local.premier_ts   = srv.premier_ts;
+          local.dernier_ts   = srv.dernier_ts;
+        } else {
+          // Nouvelle source créée côté serveur (par import CSV) → l'ajouter
+          _sources.push(srv);
+        }
+      });
+      _render();
+    });
+  }
+
+  // ─── Init ──────────────────────────────────────────────────────────────────
+  // Charger GET_PARAM pour avoir sources + panneau, puis enrichir avec les stats GET
+  _apiScript('GET_PARAM', {}).then(function (rep) {
+    if (rep.status && rep.data) {
+      _setPanneauFields(rep.data.panneau);
+    }
+  });
+  // Charger les données GET (avec stats) au lieu de GET_PARAM (sans stats)
+  _apiScript('GET', {}).then(function (rep) {
+    if (rep.status && rep.data && rep.data.sources) {
+      _sources = rep.data.sources;
+      _render();
+    } else {
+      var c = document.getElementById('sol-sources-list');
+      if (c) c.innerHTML = '<div class="sol-empty">Aucune source configurée.</div>';
+    }
+  });
+
+})();
+</script>

@@ -269,6 +269,29 @@ def relancer_pipeline():
         except Exception as exc:
             logger.error("Pipeline : exception eco2mix → %s", exc)
 
+    # ── solaire ───────────────────────────────────────────────────────────────
+
+    module_solaire = _charger_script("solaire")
+    if module_solaire is not None:
+        try:
+            records_conso = nouveau_data.get("api_conso", {}).get("records", [])
+            ts_list_sol   = [r["ts"] for r in records_conso if r.get("ts")]
+            if ts_list_sol:
+                rep = module_solaire.run(
+                    mode="GET_CRENEAUX",
+                    params={"ts_list": ts_list_sol},
+                    global_param=_global_param,
+                )
+                if rep.get("status"):
+                    nouveau_data["solaire"] = rep.get("data", {})
+                    logger.info("Pipeline : solaire GET_CRENEAUX OK (%d créneaux × %d sources)",
+                                len(ts_list_sol),
+                                len(rep["data"].get("sources", [])))
+                else:
+                    logger.warning("Pipeline : solaire GET_CRENEAUX → %s", rep.get("error"))
+        except Exception as exc:
+            logger.error("Pipeline : exception solaire → %s", exc)
+
     # ── Fichiers JSON globaux ─────────────────────────────────────────────────
 
     masques = {}
@@ -289,6 +312,24 @@ def relancer_pipeline():
                 masques["eco2mix"] = rep.get("data", {})
         except Exception as exc:
             logger.warning("Pipeline : eco2mix GET_MASKS → %s", exc)
+
+    # Masques solaire — 3 lignes : groupe / noms sources (colspan=2) / sous-colonnes lux+kWh
+    if "solaire" in nouveau_data:
+        src_list = nouveau_data["solaire"].get("sources", [])
+        if src_list:
+            nb   = len(src_list)
+            row1 = '<th colspan="{}" class="sol-th-group">\u2600\ufe0f Solaire</th>'.format(2 * nb)
+            row2 = "".join(
+                '<th colspan="2" class="sol-th-name">{}</th>'.format(s["nom"])
+                for s in src_list
+            )
+            row3 = '<th class="sol-th">lux moy</th><th class="sol-th">kWh</th>' * nb
+            masques["solaire"] = {
+                "sources": src_list,
+                "tableau_titre": (
+                    "<tr>{}</tr><tr>{}</tr><tr>{}</tr>"
+                ).format(row1, row2, row3),
+            }
 
     # Masques tarifs (modules découverts)
     for nom_tarif in _decouvrir_scripts_tarif():
@@ -343,6 +384,11 @@ def relancer_pipeline():
     if "eco2mix" in nouveau_data:
         manifest["eco2mix"] = _ecrire_json_global("eco2mix.json", nouveau_data["eco2mix"])
         logger.info("Pipeline : eco2mix.json écrit")
+
+    # solaire_creneaux.json
+    if "solaire" in nouveau_data and nouveau_data["solaire"].get("sources"):
+        manifest["solaire"] = _ecrire_json_global("solaire_creneaux.json", nouveau_data["solaire"])
+        logger.info("Pipeline : solaire_creneaux.json écrit")
 
     # manifest.json — toujours écrit en dernier (atomic du point de vue du client)
     _ecrire_json_global("manifest.json", manifest)

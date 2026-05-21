@@ -1297,6 +1297,42 @@ body {
   text-align: right;
 }
 
+/* ─── En-têtes solaire (tableau détails) ──────────────────────────────────── */
+
+.sol-th-group {
+  background: #fff8e1;
+  color: #7a5800;
+  text-align: center;
+  font-weight: 700;
+}
+
+.sol-th-name {
+  background: #fff3cd;
+  color: #6b4100;
+  text-align: center;
+  font-weight: 600;
+  font-size: 0.80rem;
+}
+
+.sol-th {
+  background: #fffde7;
+  color: #5d4037;
+  text-align: center;
+  font-weight: 500;
+  font-size: 0.75rem;
+}
+
+/* Cellules de données solaire */
+.sol-td {
+  text-align: right;
+}
+
+.sol-td-nd {
+  text-align: center;
+  color: #bbb;
+  font-style: italic;
+}
+
 .eco2mix-td-co2m-total,
 .eco2mix-td-co2mg-total {
   color: #555;
@@ -1884,10 +1920,6 @@ td.co2-haut {
   vertical-align: middle;
 }
 
-.details-spinner-cell {
-  text-align: center;
-  padding: 1.5rem 0.5rem;
-}
 
 /* ─── Bandeau de chargement global ──────────────────────────────────────── */
 
@@ -2040,4 +2072,201 @@ td.co2-haut {
 
 .detail-tip:hover::before {
   opacity: 1;
+}
+
+
+/* ── Page Modules complémentaires ─────────────────────────────────────────── */
+
+.sol-mod-page {
+  padding: 1.5rem;
+  max-width: 1100px;
+}
+
+.sol-mod-titre {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: #1a73e8;
+  margin-bottom: 1.2rem;
+}
+
+.sol-mod-config {
+  background: #fff;
+  border: 1px solid #dde3ef;
+  border-radius: 10px;
+  padding: 1.2rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.sol-mod-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  align-items: flex-end;
+  margin-bottom: 0.9rem;
+}
+
+.sol-mod-field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  flex: 1;
+  min-width: 180px;
+}
+
+.sol-mod-field-btn {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+.sol-mod-label {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #5a6785;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.sol-mod-select {
+  padding: 0.45rem 0.7rem;
+  border: 1px solid #ccd3e0;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  background: #f8fafc;
+  color: #2c3e50;
+  cursor: pointer;
+}
+
+.sol-mod-select:focus {
+  outline: 2px solid #1a73e8;
+  outline-offset: 1px;
+}
+
+.sol-mod-btn-calc {
+  padding: 0.48rem 1.4rem;
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.18s;
+  white-space: nowrap;
+}
+
+.sol-mod-btn-calc:hover:not(:disabled) {
+  background: #1558b0;
+}
+
+.sol-mod-btn-calc:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.sol-mod-hint {
+  font-size: 0.82rem;
+  color: #7a8599;
+  margin-top: 0.2rem;
+}
+
+.sol-mod-warn {
+  color: #c0392b;
+  background: #fdf1f0;
+  border: 1px solid #f5c6c2;
+  border-radius: 6px;
+  padding: 0.7rem 1rem;
+  font-size: 0.88rem;
+}
+
+/* ── Rapport solaire ──────────────────────────────────────────────────────── */
+
+.sol-mod-rapport {
+  background: #fff;
+  border: 1px solid #dde3ef;
+  border-radius: 10px;
+  padding: 1.2rem 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.sol-mod-rapport-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.2rem;
+  align-items: baseline;
+  margin-bottom: 1rem;
+  padding-bottom: 0.8rem;
+  border-bottom: 1px solid #edf0f7;
+}
+
+.sol-mod-rapport-src,
+.sol-mod-rapport-tarif {
+  font-size: 0.9rem;
+  color: #2c3e50;
+}
+
+.sol-mod-rapport-periode {
+  font-size: 0.82rem;
+  color: #6c7086;
+  margin-left: auto;
+}
+
+.sol-mod-table-wrap {
+  overflow-x: auto;
+}
+
+.sol-mod-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.sol-mod-table th {
+  background: #f0f4fb;
+  color: #5a6785;
+  font-weight: 600;
+  text-align: right;
+  padding: 0.55rem 0.8rem;
+  border-bottom: 2px solid #dde3ef;
+  white-space: nowrap;
+}
+
+.sol-mod-table th:first-child {
+  text-align: center;
+}
+
+.sol-mod-table td {
+  padding: 0.45rem 0.8rem;
+  border-bottom: 1px solid #edf0f7;
+}
+
+.sol-mod-table tr:last-child td {
+  border-bottom: none;
+}
+
+.sol-mod-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  color: #2c3e50;
+}
+
+.sol-mod-table td:first-child {
+  text-align: center;
+  font-weight: 600;
+  color: #3d5380;
+}
+
+.sol-mod-row-best {
+  background: #e8f5e9;
+}
+
+.sol-mod-row-best td {
+  color: #2e7d32 !important;
+  font-weight: 600;
+}
+
+.sol-mod-legende {
+  font-size: 0.78rem;
+  color: #7a8599;
+  margin-top: 0.9rem;
+  font-style: italic;
 }

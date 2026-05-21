@@ -61,6 +61,14 @@ env/
 *.swo
 *~
 
+# ─── Répertoire d'exemples / sandbox ─────────────────────────────────────────
+
+sample/
+
+# ─── Module Solaire : données et config utilisateur ──────────────────────────
+
+modules_complementaires/solaire/data/
+
 # ─── Claude Code ─────────────────────────────────────────────────────────────
 
 .claude/

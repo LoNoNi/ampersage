@@ -6,12 +6,14 @@ Expose les routes API et sert les fichiers statiques de l'IHM.
 import importlib.util
 import json
 import logging
+import re
 import subprocess
 import threading
 import time
+import unicodedata
 import urllib.request
 import urllib.error
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -136,12 +138,18 @@ def _ecrire_version_check(data: dict):
 
 # ─── Helpers ──────────────────────────────────────────────────────────────────
 
+_modules_cache: dict = {}  # { nom_script → module } — une seule instance par script
+
 
 def _charger_script(nom_script: str):
     """
     Résout et importe dynamiquement un script par son nom.
     Cherche dans scripts/<nom>/<nom>.py et scripts/tarif/<nom>.py.
+    Le module est mis en cache : toutes les requêtes partagent la même instance,
+    ce qui garantit que les verrous threading définis au niveau module sont effectifs.
     """
+    if nom_script in _modules_cache:
+        return _modules_cache[nom_script]
     candidats = [
         SCRIPTS_DIR / nom_script / f"{nom_script}.py",
         SCRIPTS_DIR / "tarif" / nom_script / f"{nom_script}.py",
@@ -153,6 +161,7 @@ def _charger_script(nom_script: str):
             spec = importlib.util.spec_from_file_location(nom_script, chemin)
             module = importlib.util.module_from_spec(spec)
             spec.loader.exec_module(module)
+            _modules_cache[nom_script] = module
             return module
     return None
 
@@ -234,7 +243,7 @@ def index():
 
 _DATA_FILES_AUTORISES = {"manifest.json", "masques.json", "params.json",
                          "api_conso.json", "eco2mix.json",
-                         "api_conso_records.ndjson"}
+                         "api_conso_records.ndjson", "solaire_creneaux.json"}
 
 _MIMETYPES = {
     "api_conso_records.ndjson": "application/x-ndjson",
@@ -335,7 +344,7 @@ def api_save_params():
         _sauvegarder_params()
         _cache_custom.clear()
         if _relancer_pipeline_fn:
-            _relancer_pipeline_fn()
+            threading.Thread(target=_relancer_pipeline_fn, daemon=True).start()
         return jsonify({"status": True, "data": params})
 
     # Groupe spécial : config rapports (stockée dans global_param)
@@ -359,7 +368,7 @@ def api_save_params():
         _sauvegarder_params()
         _cache_custom.clear()
         if _relancer_pipeline_fn:
-            _relancer_pipeline_fn()
+            threading.Thread(target=_relancer_pipeline_fn, daemon=True).start()
 
     return jsonify(reponse)
 
@@ -422,6 +431,256 @@ def api_trigger_update():
         "statut":  _global_param.get("api_conso_STATUT"),
         "message": _global_param.get("api_conso_message"),
     })
+
+
+def _slugifier(s):
+    """Identique à generique._slugifier : offre_id → slug pour nommage fichier ndjson."""
+    s = unicodedata.normalize("NFD", str(s))
+    s = "".join(c for c in s if unicodedata.category(c) != "Mn")
+    s = s.lower()
+    s = re.sub(r"[^a-z0-9]+", "_", s)
+    return s.strip("_")
+
+
+@app.route("/api/solaire/config", methods=["GET"])
+def api_solaire_config():
+    """Retourne les tarifs disponibles et les sources solaires configurées."""
+    gen_index_file = SCRIPTS_DIR / "tarif" / "generique" / "generique_index.json"
+    tarifs = {}
+    if gen_index_file.exists():
+        try:
+            with open(gen_index_file, encoding="utf-8") as f:
+                gen_index = json.load(f)
+            tarifs = gen_index.get("offres", {})
+        except Exception:
+            pass
+
+    module_solaire = _charger_script("solaire")
+    sources = []
+    panneau = {}
+    if module_solaire is not None:
+        try:
+            rep = module_solaire.run("GET_PARAM", {}, _global_param)
+            if rep.get("status"):
+                sources = rep["data"].get("sources", [])
+                panneau = rep["data"].get("panneau", {})
+        except Exception:
+            pass
+
+    return jsonify({
+        "status": True,
+        "data": {"tarifs": tarifs, "sources": sources, "panneau": panneau},
+    })
+
+
+@app.route("/api/solaire/rapport", methods=["POST"])
+def api_solaire_rapport():
+    """Calcule le rapport d'optimisation solaire pour une source et un tarif donnés."""
+    TZ = ZoneInfo("Europe/Paris")
+
+    body = request.get_json(force=True) or {}
+    source_id = body.get("source_id", "")
+    tariff_id = body.get("tariff_id", "")
+    if not source_id or not tariff_id:
+        return jsonify({"status": False, "error": "source_id et tariff_id requis"}), 400
+
+    # ── Paramètres panneau ────────────────────────────────────────────────────
+    module_solaire = _charger_script("solaire")
+    if module_solaire is None:
+        return jsonify({"status": False, "error": "Module solaire introuvable"}), 404
+    rep_param = module_solaire.run("GET_PARAM", {}, _global_param)
+    panneau = rep_param.get("data", {}).get("panneau", {})
+    puissance_wc = float(panneau.get("puissance_wc", 425))
+    pr           = float(panneau.get("performance_ratio", 80)) / 100.0
+    nb_max       = int(panneau.get("nb_panneaux_max", 20))
+    cout_panneau = float(panneau.get("cout_panneau", 900))
+
+    # ── Données solaires ──────────────────────────────────────────────────────
+    solaire_file = DATA_DIR / "solaire_creneaux.json"
+    if not solaire_file.exists():
+        return jsonify({"status": False,
+                        "error": "Données solaires absentes — lancez une mise à jour"}), 503
+    with open(solaire_file, encoding="utf-8") as f:
+        solaire_data = json.load(f)
+    sources_sol = solaire_data.get("sources", [])
+    src_idx = next((i for i, s in enumerate(sources_sol) if s["id"] == source_id), None)
+    if src_idx is None:
+        return jsonify({"status": False,
+                        "error": "Source '{}' introuvable".format(source_id)}), 404
+    src_info = sources_sol[src_idx]
+
+    # ── Tarif ─────────────────────────────────────────────────────────────────
+    gen_index_file = SCRIPTS_DIR / "tarif" / "generique" / "generique_index.json"
+    if not gen_index_file.exists():
+        return jsonify({"status": False, "error": "Index tarifs absent"}), 503
+    with open(gen_index_file, encoding="utf-8") as f:
+        gen_index = json.load(f)
+    offre_meta = gen_index.get("offres", {}).get(tariff_id)
+    if not offre_meta:
+        return jsonify({"status": False,
+                        "error": "Tarif '{}' introuvable".format(tariff_id)}), 404
+
+    tariff_ndjson = DATA_DIR / "tarif_{}.ndjson".format(_slugifier(tariff_id))
+    if not tariff_ndjson.exists():
+        return jsonify({"status": False,
+                        "error": "Fichier tarif absent — relancez une mise à jour"}), 503
+
+    # ── Normalisation timestamps → heure locale "YYYY-MM-DDTHH:MM" ───────────
+    def _local(ts_str):
+        dt = datetime.fromisoformat(ts_str)
+        if dt.tzinfo is not None:
+            dt = dt.astimezone(TZ)
+        return dt.strftime("%Y-%m-%dT%H:%M")
+
+    # Charger tarif (déjà en heure locale, format YYYY-MM-DDTHH:MM)
+    prix_par_ts = {}
+    with open(tariff_ndjson, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+                prix_par_ts[r["t"][:16]] = float(r.get("pk", 0) or 0)
+            except (json.JSONDecodeError, KeyError):
+                continue
+
+    # Charger consommation (UTC → local)
+    conso_file = DATA_DIR / "api_conso_records.ndjson"
+    if not conso_file.exists():
+        return jsonify({"status": False, "error": "Données consommation absentes"}), 503
+    records_conso = {}
+    with open(conso_file, encoding="utf-8") as f:
+        for line in f:
+            line = line.strip()
+            if not line:
+                continue
+            try:
+                r = json.loads(line)
+                records_conso[_local(r["ts"])] = float(r.get("kwh", 0) or 0)
+            except (json.JSONDecodeError, KeyError, ValueError):
+                continue
+
+    # Charger solaire (UTC → local, source choisie uniquement)
+    creneaux_sol = solaire_data.get("creneaux", {})
+    sol_par_ts = {}
+    for ts_utc, vals in creneaux_sol.items():
+        if src_idx < len(vals) and vals[src_idx].get("kwh") is not None:
+            sol_par_ts[_local(ts_utc)] = float(vals[src_idx]["kwh"])
+
+    # ── Période commune — dernière année glissante ────────────────────────────
+    ts_communs = sorted(set(prix_par_ts) & set(records_conso) & set(sol_par_ts))
+    if not ts_communs:
+        return jsonify({"status": False,
+                        "error": "Aucune période commune (solaire × tarif × consommation)"}), 422
+
+    ts_fin_dt  = datetime.fromisoformat(ts_communs[-1])
+    ts_deb_str = (ts_fin_dt - timedelta(days=365)).strftime("%Y-%m-%dT%H:%M")
+    ts_periode = [ts for ts in ts_communs if ts >= ts_deb_str]
+
+    if len(ts_periode) < 48:
+        return jsonify({"status": False,
+                        "error": "Données insuffisantes ({} créneaux)".format(
+                            len(ts_periode))}), 422
+
+    # ── Calcul ────────────────────────────────────────────────────────────────
+    # facteur = (puissance_wc/1000) × PR : échelle 1 kWp → N panneaux de puissance_wc Wc
+    facteur_1p = (puissance_wc / 1000.0) * pr
+
+    facture_0    = 0.0
+    conso_totale = 0.0
+    for ts in ts_periode:
+        conso_totale += records_conso[ts]
+        facture_0    += records_conso[ts] * prix_par_ts[ts]
+
+    resultats = []
+    for n in range(nb_max + 1):
+        if n == 0:
+            resultats.append({
+                "n": 0,
+                "production_kwh":  0.0,
+                "excedent_kwh":    0.0,
+                "conso_nette_kwh": round(conso_totale, 1),
+                "facture_eur":     round(facture_0, 2),
+                "economie_eur":    0.0,
+                "cout_install":    0,
+                "rsi_ans":         None,
+            })
+            continue
+
+        facteur_n = n * facteur_1p
+        prod_tot = excedent_tot = facture_n = 0.0
+        for ts in ts_periode:
+            prod = sol_par_ts[ts] * facteur_n
+            net  = records_conso[ts] - prod
+            if net < 0:
+                excedent_tot += -net
+                net = 0.0
+            prod_tot  += prod
+            facture_n += net * prix_par_ts[ts]
+
+        economie    = round(facture_0 - facture_n, 2)
+        cout_inst   = round(n * cout_panneau)
+        rsi         = round(cout_inst / economie, 1) if economie > 0.1 else None
+        resultats.append({
+            "n":               n,
+            "production_kwh":  round(prod_tot, 1),
+            "excedent_kwh":    round(excedent_tot, 1),
+            "conso_nette_kwh": round(conso_totale - prod_tot + excedent_tot, 1),
+            "facture_eur":     round(facture_n, 2),
+            "economie_eur":    economie,
+            "cout_install":    cout_inst,
+            "rsi_ans":         rsi,
+        })
+
+    return jsonify({
+        "status": True,
+        "data": {
+            "source":           src_info,
+            "tariff_id":        tariff_id,
+            "tariff_nom":       "{} — {}".format(
+                offre_meta.get("fournisseur", ""), offre_meta.get("nom", tariff_id)),
+            "nb_slots":         len(ts_periode),
+            "periode_debut":    ts_periode[0][:10],
+            "periode_fin":      ts_periode[-1][:10],
+            "conso_totale_kwh": round(conso_totale, 1),
+            "panneau":          panneau,
+            "resultats":        resultats,
+        },
+    })
+
+
+@app.route("/api/solaire/import_csv", methods=["POST"])
+def api_solaire_import_csv():
+    """Reçoit un fichier CSV de données solaires et l'importe dans le module solaire."""
+    if "file" not in request.files:
+        return jsonify({"status": False, "error": "Fichier requis"}), 400
+
+    fichier = request.files["file"]
+    try:
+        contenu = fichier.read().decode("utf-8-sig")
+    except Exception as exc:
+        return jsonify({"status": False, "error": "Impossible de lire le fichier : {}".format(exc)}), 400
+
+    module = _charger_script("solaire")
+    if module is None:
+        return jsonify({"status": False, "error": "Module solaire introuvable"}), 404
+
+    unite = request.form.get("unite", "").strip()
+    params_import = {"contenu": contenu}
+    if unite:
+        params_import["unite"] = unite
+    try:
+        reponse = module.run(
+            mode="IMPORT_CSV",
+            params=params_import,
+            global_param=_global_param,
+        )
+    except Exception as exc:
+        logger.error("solaire import_csv : %s", exc)
+        return jsonify({"status": False, "error": str(exc)}), 500
+
+    return jsonify(reponse)
 
 
 @app.route("/api/import_csv", methods=["POST"])
@@ -497,6 +756,29 @@ def api_expose():
 
     # ── Modules complémentaires ───────────────────────────────────────────────
     modules_comp = {}
+
+    # Découverte automatique de tous les modules dans modules_complementaires/
+    # (sauf eco2mix qui a un traitement spécial ci-dessous)
+    _MODULES_SPEC = {"eco2mix", "rapport_config"}
+    if MODULES_COMP_DIR.exists():
+        for sous_dir in sorted(MODULES_COMP_DIR.iterdir()):
+            if not sous_dir.is_dir() or sous_dir.name.startswith("_"):
+                continue
+            nom_mod = sous_dir.name
+            if nom_mod in _MODULES_SPEC:
+                continue
+            module = _charger_script(nom_mod)
+            if module is None:
+                continue
+            try:
+                rep_param = module.run(mode="GET_PARAM", params={}, global_param=_global_param)
+                rep_get   = module.run(mode="GET",       params={}, global_param=_global_param)
+                modules_comp[nom_mod] = {
+                    "statut":    "actif" if rep_get.get("status") else "non initialisé",
+                    "parametres": rep_param.get("data", {}),
+                }
+            except Exception as exc:
+                modules_comp[nom_mod] = {"statut": "erreur", "erreur": str(exc)}
 
     # eco2mix
     eco2mix_mod = _charger_script("eco2mix")

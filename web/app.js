@@ -15,14 +15,17 @@ var _detailsConfig   = null; // {acCols, e2mCols, offres} — rempli par _constr
 var _acGroups        = null; // { year: { month: { day: [records] } } } — données groupées
 var _acGroupsCfg     = null; // { cfg, ligneTpl } — config pour rendu à la demande
 var _settingsListenerPret = false;
-var _masquesCache    = null; // masques.json mis en cache pour re-rendu
-var _paramsGlobaux   = null; // { puissance_souscrite, plage_hc } depuis params.json
+var _masquesCache      = null; // masques.json mis en cache pour re-rendu
+var _modulesCompCache  = {};   // modules_complementaires découverts via /api/expose
+var _paramsGlobaux     = null; // { puissance_souscrite, plage_hc } depuis params.json
 var _inlinePanels    = {};   // { slug → html } — panels injectés sans fetch (offres generique)
 var _panelsPrecharge = {};   // { nom → {html, params} | null } — pré-chargé à l'étape 3
 var _masquesGenerique = {};  // masques.generique — templates HTML des offres
 var _customMeta      = {};  // { offreId → {abonnement_mensuel_ht, abonnement_mensuel_ttc, puissance} }
 var _consoRecords    = null; // [{ ts, kwh, pmax }] — records bruts chargés avec api_conso
 var _e2mCreneaux     = null; // { ts → créneau enrichi } depuis eco2mix.json
+var _solaireData     = null; // { sources:[{id,nom,coeff}], creneaux:{ts:[kwh|null,...]} }
+var _solModConfig    = null; // config solaire : { tarifs, sources, panneau }
 var _offresConfig    = null; // params.offres[] — barème abonnements par offre
 var _rapportConfig   = null; // { puissance_principale, periodes... }
 var _modePrix        = "ttc"; // params.params.mode_prix
@@ -155,12 +158,13 @@ function initNavigation() {
   });
 }
 
-var _PAGE_CONTENEUR = { home: "main-content", details: "details-content", settings: "settings-content" };
+var _PAGE_CONTENEUR = { home: "main-content", details: "details-content", settings: "settings-content", modules: "modules-content" };
 
 function chargerPage(page) {
   if (page === "home")     chargerPageAccueil();
   if (page === "details")  chargerPageDetails();
   if (page === "settings") chargerPageParametres();
+  if (page === "modules")  chargerPageModules();
 }
 
 // ─── Chargement initial ───────────────────────────────────────────────────────
@@ -169,7 +173,7 @@ var _SPINNER_HTML = '<div class="main-spinner"><span class="main-spinner-anim"><
 var _SPINNER_DEBUG = '<span class="debug-spinner"></span>';
 
 function _afficherSpinnersPartout() {
-  ["main-content", "details-content", "settings-content"].forEach(function (id) {
+  ["main-content", "details-content", "settings-content", "modules-content"].forEach(function (id) {
     var el = document.getElementById(id);
     if (el) el.innerHTML = _SPINNER_HTML;
   });
@@ -406,13 +410,10 @@ function _initControlesHome(el) {
 }
 
 function _rafraichirTableauDetails() {
-  /* Vide le tbody de détails (sans toucher la ligne spinner) et réinjecte les groupes. */
+  /* Vide le tbody de détails et réinjecte les groupes. */
   var tbody = document.getElementById("details-tbody");
   if (!tbody || !_acGroups) return;
-  var spinnerRow = tbody.lastChild;
-  while (tbody.firstChild && tbody.firstChild !== spinnerRow) {
-    tbody.removeChild(tbody.firstChild);
-  }
+  while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
   _injecterGroupesAC(tbody);
 }
 
@@ -686,6 +687,12 @@ function _appliquerMasquesParametres(masques) {
     cardEco2mix = _htmlCard("eco2mix", null, {});
   }
 
+  // ── Accordéons modules complémentaires (ex: solaire) ─────────────────────
+  var modsComp = _modulesCompCache;
+  var cardsModsComp = Object.keys(modsComp).filter(function(n) { return n !== "eco2mix" && n !== "rapport_config"; }).map(function(nomMod) {
+    return _htmlCard(nomMod, null, {});
+  }).join("");
+
   // ── Accordéons offres génériques (inline, lecture seule) ─────────────────
   var generique = masques.generique || {};
   var cardsOffres = Object.keys(generique).map(function(offreId) {
@@ -703,10 +710,11 @@ function _appliquerMasquesParametres(masques) {
   var html = '<div class="settings-page">' +
     cardGlobaux +
     '<div class="settings-section"><h2 class="settings-section-titre">' + t("section_rapports") + '</h2>' + cardRapport + '</div>' +
-    (cardApiConso || cardEco2mix || cardsOffres
-      ? (cardApiConso ? '<div class="settings-section"><h2 class="settings-section-titre">' + t("section_consommation") + '</h2>' + cardApiConso + '</div>' : '') +
-        (cardEco2mix  ? '<div class="settings-section"><h2 class="settings-section-titre">' + t("section_donnees")      + '</h2>' + cardEco2mix  + '</div>' : '') +
-        (cardsOffres  ? '<div class="settings-section"><h2 class="settings-section-titre">' + t("section_offres")       + '</h2>' + cardsOffres  + '</div>' : '')
+    (cardApiConso || cardEco2mix || cardsModsComp || cardsOffres
+      ? (cardApiConso   ? '<div class="settings-section"><h2 class="settings-section-titre">' + t("section_consommation") + '</h2>' + cardApiConso   + '</div>' : '') +
+        (cardEco2mix    ? '<div class="settings-section"><h2 class="settings-section-titre">' + t("section_donnees")      + '</h2>' + cardEco2mix    + '</div>' : '') +
+        (cardsModsComp  ? '<div class="settings-section"><h2 class="settings-section-titre">' + t("section_modules")     + '</h2>' + cardsModsComp  + '</div>' : '') +
+        (cardsOffres    ? '<div class="settings-section"><h2 class="settings-section-titre">' + t("section_offres")       + '</h2>' + cardsOffres    + '</div>' : '')
       : '') +
     '</div>';
 
@@ -729,7 +737,14 @@ function _appliquerParamsGlobaux(paramsData) {
   // Re-rendre la page paramètres avec les vraies valeurs
   if (_masquesCache) _appliquerMasquesParametres(_masquesCache);
   // Pré-charger les panels modules dès que params sont disponibles
-  _prechargerPanels(["rapport_config", "api_conso", "eco2mix"]);
+  fetch("/api/expose").then(function(r) { return r.ok ? r.json() : {}; }).catch(function() { return {}; }).then(function(expose) {
+    _modulesCompCache = expose.modules_complementaires || {};
+    var nomsBase = ["rapport_config", "api_conso", "eco2mix"];
+    var nomsComp = Object.keys(_modulesCompCache).filter(function(n) { return n !== "eco2mix" && n !== "rapport_config"; });
+    _prechargerPanels(nomsBase.concat(nomsComp));
+    // Re-rendre les paramètres maintenant qu'on connaît les modules
+    if (_masquesCache) _appliquerMasquesParametres(_masquesCache);
+  });
 }
 
 function _prechargerPanels(noms) {
@@ -880,6 +895,7 @@ function _chargerTariffCustom(offreId) {
       });
       _tariffIndex[offreId] = idx;
       _rendreRapports();
+      _rafraichirTableauDetails();
     })
     .catch(function(e) { console.warn("[tariff custom] erreur chargement", offreId, e); });
 }
@@ -1015,6 +1031,64 @@ function _e2mStatsGroupe(recs) {
   };
 }
 
+// ─── Colonnes solaires ────────────────────────────────────────────────────────
+
+function _solaireVidesHtml() {
+  /* Cellules solaires vides (—) basées sur _detailsConfig.solaireCols. */
+  var nb = (_detailsConfig && _detailsConfig.solaireCols) || 0;
+  if (!nb) return '';
+  var html = '';
+  for (var i = 0; i < nb; i++) html += '<td class="sol-td sol-td-nd">\u2014</td>';
+  return html;
+}
+
+function _solaireCellulesDetail(ts) {
+  /* Cellules solaires pour une ligne de détail : 2 cellules par source (lux moy + kWh). */
+  if (!_solaireData || !_solaireData.creneaux) return _solaireVidesHtml();
+  var vals = _solaireData.creneaux[ts];
+  if (!vals) return _solaireVidesHtml();
+  var html = '';
+  vals.forEach(function(v) {
+    if (!v || v.lux === null && v.kwh === null) {
+      html += '<td class="sol-td sol-td-nd">\u2014</td><td class="sol-td sol-td-nd">\u2014</td>';
+    } else {
+      var lux = v.lux !== null && v.lux !== undefined ? Math.round(v.lux).toString() : '\u2014';
+      var kwh = v.kwh !== null && v.kwh !== undefined ? v.kwh.toFixed(3) : '\u2014';
+      html += '<td class="sol-td">' + lux + '</td><td class="sol-td">' + kwh + '</td>';
+    }
+  });
+  return html;
+}
+
+function _solaireCellulesGroupe(recs) {
+  /* Cellules solaires pour une ligne de groupe : 2 cellules par source.
+     lux moy : non agrégeable → affiche toujours —
+     kWh     : somme des créneaux */
+  if (!_solaireData || !_solaireData.sources || !_solaireData.sources.length) return _solaireVidesHtml();
+  var nb = _solaireData.sources.length;
+  var kwhTotaux  = new Array(nb).fill(0);
+  var kwhHasData = new Array(nb).fill(false);
+  (recs || []).forEach(function(r) {
+    var vals = (_solaireData.creneaux || {})[r.ts];
+    if (!vals) return;
+    for (var i = 0; i < nb; i++) {
+      var v = vals[i];
+      if (v && v.kwh !== null && v.kwh !== undefined) {
+        kwhTotaux[i]  += v.kwh;
+        kwhHasData[i]  = true;
+      }
+    }
+  });
+  var html = '';
+  for (var i = 0; i < nb; i++) {
+    html += '<td class="sol-td sol-td-nd">\u2014</td>';  // lux : pas de somme significative
+    html += kwhHasData[i]
+      ? '<td class="sol-td">' + kwhTotaux[i].toFixed(2) + '</td>'
+      : '<td class="sol-td sol-td-nd">\u2014</td>';
+  }
+  return html;
+}
+
 function _e2mCellulesGroupe(recs) {
   /* 4 cellules eco2mix pour une ligne de groupe (agrégat). */
   var s = _e2mStatsGroupe(recs);
@@ -1135,10 +1209,10 @@ function _acCellulesVides(cfg) {
 }
 
 function _acTariffStatsGroupe(records, offres) {
-  /* Calcule pour chaque offre : coût total (€), kwh total, et sommes pondérées
-     des champs extra numériques (pour les offres custom). */
+  /* Calcule pour chaque offre : coût total (€), kwh total, sommes pondérées
+     des champs extra numériques (offres custom), et sommes par couleur×HC/HP (Tempo). */
   var stats = {};
-  offres.forEach(function(o) { stats[o.id] = { prix_eur: 0, kwh: 0, extra: {} }; });
+  offres.forEach(function(o) { stats[o.id] = { prix_eur: 0, kwh: 0, extra: {}, colEur: {} }; });
   records.forEach(function(r) {
     var hourKey = _tariffHourKey(r.ts);
     var kwh     = r.kwh || 0;
@@ -1149,12 +1223,17 @@ function _acTariffStatsGroupe(records, offres) {
         stats[o.id].kwh      += kwh;
         // Sommes pondérées des champs extra numériques (offres custom)
         Object.keys(td).forEach(function(key) {
-          if (key === "pk" || key === "h") return;
+          if (key === "pk" || key === "h" || key === "col") return;
           var val = parseFloat(td[key]);
           if (!isNaN(val)) {
             stats[o.id].extra[key] = (stats[o.id].extra[key] || 0) + kwh * val;
           }
         });
+        // Somme du coût par couleur×HC/HP (Tempo)
+        if (td.col) {
+          var cEur = td.col + "_eur";
+          stats[o.id].colEur[cEur] = (stats[o.id].colEur[cEur] || 0) + kwh * (td.pk || 0);
+        }
       }
     });
   });
@@ -1182,6 +1261,13 @@ function _acGroupCellsTarif(offre, tariffStats) {
       html = html.replace(new RegExp("\\{\\{" + key + "\\}\\}", "g"), moy);
     });
   }
+  // Sommes par couleur×HC/HP (Tempo)
+  var TEMPO_COLS = ["bleu_hc","bleu_hp","blanc_hc","blanc_hp","rouge_hc","rouge_hp"];
+  TEMPO_COLS.forEach(function(c) {
+    var key = c + "_eur";
+    var val = (s.colEur && s.colEur[key] !== undefined) ? s.colEur[key].toFixed(2) : "0.00";
+    html = html.replace(new RegExp("\\{\\{" + key + "\\}\\}", "g"), val);
+  });
   return html.replace(/^\s*<tr[^>]*>\s*/i, "").replace(/\s*<\/tr>\s*$/i, "");
 }
 
@@ -1196,10 +1282,11 @@ function _acStats(records) {
   return { count: count, kwh: kwh, pmax: pmax };
 }
 
-function _acLigneGroupe(ligneTpl, cfg, classes, acId, acDay, labelHtml, stats, tariffStats, e2mCells) {
+function _acLigneGroupe(ligneTpl, cfg, classes, acId, acDay, labelHtml, stats, tariffStats, e2mCells, solCells) {
   /* Construit une ligne de groupe.
      tariffStats : résultat de _acTariffStatsGroupe (peut être null → cellules vides)
-     e2mCells : HTML des 4 cellules eco2mix (pré-calculé) */
+     e2mCells : HTML des 4 cellules eco2mix (pré-calculé)
+     solCells  : HTML des cellules solaires (pré-calculé) */
   var tr = '<tr class="ac-group ' + classes + '" data-ac-id="' + acId + '"' +
            (acDay ? ' data-ac-day="' + acDay + '"' : '') + '>';
   tr += ligneTpl
@@ -1208,6 +1295,7 @@ function _acLigneGroupe(ligneTpl, cfg, classes, acId, acDay, labelHtml, stats, t
     .replace(/\{\{pmax\}\}/g, stats.pmax.toFixed(1));
   tr += e2mCells || ('<td colspan="' + cfg.e2mCols + '"></td>');
   cfg.offres.forEach(function(o) { tr += _acGroupCellsTarif(o, tariffStats); });
+  tr += (solCells !== undefined ? solCells : _solaireVidesHtml());
   tr += '</tr>';
   return tr;
 }
@@ -1237,6 +1325,7 @@ function _acHtmlGroupe(cfg, ligneTpl) {
     .replace(/\{\{pmax\}\}/g, tStats.pmax.toFixed(1));
   trTotal += _e2mCellulesGroupe(allRecs);
   cfg.offres.forEach(function(o) { trTotal += _acGroupCellsTarif(o, tTarif); });
+  trTotal += _solaireCellulesGroupe(allRecs);
   trTotal += '</tr>';
   html += trTotal;
 
@@ -1257,7 +1346,7 @@ function _acHtmlGroupe(cfg, ligneTpl) {
                  ' <span class="ac-count">' + yStats.count + '\u00a0' + t("releves") + '</span>';
 
     html += _acLigneGroupe(ligneTpl, cfg, 'ac-year', 'y-' + year, null, yLabel, yStats, yTarif,
-      _e2mCellulesGroupe(allYearRecs));
+      _e2mCellulesGroupe(allYearRecs), _solaireCellulesGroupe(allYearRecs));
 
     months.forEach(function(month) {
       var monthData = yearData[month];
@@ -1273,7 +1362,7 @@ function _acHtmlGroupe(cfg, ligneTpl) {
 
       html += _acLigneGroupe(ligneTpl, cfg,
         'ac-month ac-child-y-' + year, 'm-' + month, null, mLabel, mStats, mTarif,
-        _e2mCellulesGroupe(allMonthRecs));
+        _e2mCellulesGroupe(allMonthRecs), _solaireCellulesGroupe(allMonthRecs));
 
       days.forEach(function(day) {
         var recs   = monthData[day];
@@ -1285,7 +1374,7 @@ function _acHtmlGroupe(cfg, ligneTpl) {
 
         html += _acLigneGroupe(ligneTpl, cfg,
           'ac-day ac-child-m-' + month + ' hidden', 'd-' + day, day, dLabel, dStats, dTarif,
-          _e2mCellulesGroupe(recs));
+          _e2mCellulesGroupe(recs), _solaireCellulesGroupe(recs));
       });
     });
   });
@@ -1310,6 +1399,7 @@ function _acRendreDetailJour(tbody, dayRow, day) {
     var hourKey    = _tariffHourKey(r.ts);
     var cellesExt  = _e2mCellulesDetail(r);
     cfg.offres.forEach(function(o) { cellesExt += _tariffCellsHtml(o, r, hourKey); });
+    cellesExt += _solaireCellulesDetail(r.ts);
     html += '<tr class="ac-detail ac-child-d-' + day + '">' +
       ligneTpl
         .replace(/\{\{ts\}\}/g,   _formaterTs(r.ts))
@@ -1371,16 +1461,15 @@ function _acMasquerDescendants(tbody, acId) {
 }
 
 function _injecterGroupesAC(tbody) {
-  /* Injecte les lignes de regroupement dans tbody (avant la ligne spinner).
+  /* Injecte les lignes de regroupement dans tbody.
      Appelé après chargement et à chaque navigation vers Détails. */
   if (!_acGroups || !_acGroupsCfg) return;
-  var spinnerRow = tbody.lastChild;
   var tmp = document.createElement("table");
   tmp.innerHTML = "<tbody>" + _acHtmlGroupe(_acGroupsCfg.cfg, _acGroupsCfg.ligneTpl) + "</tbody>";
   var rows = tmp.querySelector("tbody");
   var frag = document.createDocumentFragment();
   while (rows.firstChild) frag.appendChild(rows.firstChild);
-  tbody.insertBefore(frag, spinnerRow);
+  tbody.appendChild(frag);
   _acAttacherEvenements(tbody);
 }
 
@@ -1440,12 +1529,6 @@ function _appliquerApiConso(meta, masques, onAffiché) {
       var tbody = document.getElementById("details-tbody");
       if (tbody) {
         _injecterGroupesAC(tbody);
-        // Effacer le spinner de la colonne horodateur (1ère cellule du spinner row)
-        var spinnerRow = tbody.lastChild;
-        if (spinnerRow) {
-          var firstCell = spinnerRow.querySelector("td");
-          if (firstCell) firstCell.innerHTML = "";
-        }
       }
       _consoRecords = rawRecords;
       // Déclencher les custom_scripts qui attendaient _consoRecords
@@ -1522,8 +1605,6 @@ function _normaliserColspan(innerHtml, cols) {
 }
 
 function _construireTableauDetails(masques) {
-  var spinner = '<div class="main-spinner"><span class="main-spinner-anim"></span></div>';
-
   // api_conso
   var acTitre = (masques.api_conso || {}).tableau_titre || "";
   var acCols  = _compterTh(acTitre) || 3;
@@ -1534,6 +1615,14 @@ function _construireTableauDetails(masques) {
   var e2mCols   = e2mLignes.length > 0
     ? e2mLignes[e2mLignes.length - 1].cols
     : (_compterTh(e2mTitre) || 2);
+
+  // solaire — 2 lignes (groupe + noms sources), peut être absent
+  var solaireTitre   = (masques.solaire || {}).tableau_titre || "";
+  var solaireLignes  = _parseBandeau(solaireTitre);
+  var solaireCols    = solaireLignes.length > 0
+    ? solaireLignes[solaireLignes.length - 1].cols
+    : 0;
+  var solaireSources = (masques.solaire || {}).sources || [];
 
   // generique : toutes les lignes du detail_bandeau, placeholders substitués
   var _SPINNER_INLINE = '<span class="details-inline-spinner"></span>';
@@ -1560,10 +1649,10 @@ function _construireTableauDetails(masques) {
     else                             _chargerTariffNdjson(o.id, o.ndjson_url);
   });
 
-  // Nombre de lignes de bandeau : max entre eco2mix et les offres
+  // Nombre de lignes de bandeau : max entre eco2mix, solaire et les offres
   var nbLignesBandeau = offres.reduce(function (max, o) {
     return Math.max(max, o.lignes.length);
-  }, e2mLignes.length);
+  }, Math.max(e2mLignes.length, solaireLignes.length));
 
   // ── thead ─────────────────────────────────────────────────────────────────
   // api_conso et eco2mix utilisent rowspan sur toutes les lignes de groupe
@@ -1573,6 +1662,9 @@ function _construireTableauDetails(masques) {
 
   // Décalage eco2mix (bottom-aligned, comme les offres tarifs)
   var e2mOffset = e2mLignes.length > 0 ? nbLignesBandeau - e2mLignes.length : 0;
+
+  // Décalage solaire (bottom-aligned comme eco2mix et les offres)
+  var solOffset = solaireLignes.length > 0 ? nbLignesBandeau - solaireLignes.length : 0;
 
   if (nbLignesBandeau <= 1) {
     // Cas simple : une seule ligne
@@ -1588,9 +1680,13 @@ function _construireTableauDetails(masques) {
         ? derniere.innerHtml
         : '<th colspan="' + o.cols + '">' + o.id + "</th>";
     });
+    // solaire
+    if (solaireLignes.length === 1) {
+      theadHtml += solaireLignes[0].innerHtml;
+    }
     theadHtml += "</tr>";
   } else {
-    // Ligne 0 : acTitre rowspan + eco2mix row 0 (ou cellule vide) + offres row 0
+    // Ligne 0 : acTitre rowspan + eco2mix row 0 (ou cellule vide) + offres row 0 + solaire row 0
     theadHtml += "<tr>";
     theadHtml += _avecRowspan(acTitre, nbLignesBandeau);
 
@@ -1624,6 +1720,18 @@ function _construireTableauDetails(masques) {
         if (o.lignes.length > 1) theadHtml += _normaliserColspan(o.lignes[0].innerHtml, o.cols);
       }
     });
+
+    // solaire en ligne 0
+    if (solaireLignes.length > 0) {
+      if (solOffset > 0) {
+        theadHtml += '<th colspan="' + solaireCols + '" rowspan="' + solOffset +
+                     '" class="details-th-vide"></th>';
+        // solaireLignes[0] ira dans la première ligne intermédiaire via solIdx
+      } else {
+        if (solaireLignes.length > 1) theadHtml += solaireLignes[0].innerHtml;
+        else theadHtml += _avecRowspan(solaireLignes[0].innerHtml, nbLignesBandeau);
+      }
+    }
     theadHtml += "</tr>";
 
     // Lignes intermédiaires
@@ -1646,6 +1754,14 @@ function _construireTableauDetails(masques) {
           theadHtml += _normaliserColspan(o.lignes[ligneIdx].innerHtml, o.cols);
         }
       });
+
+      // solaire lignes intermédiaires
+      if (solaireLignes.length > 1) {
+        var solIdx = i - solOffset;
+        if (solIdx >= 0 && solIdx <= solaireLignes.length - 2) {
+          theadHtml += solaireLignes[solIdx].innerHtml;
+        }
+      }
       theadHtml += "</tr>";
     }
 
@@ -1667,25 +1783,24 @@ function _construireTableauDetails(masques) {
         ? derniere.innerHtml
         : '<th colspan="' + o.cols + '">' + o.id + "</th>";
     });
+
+    // solaire dernière ligne
+    if (solaireLignes.length > 1) {
+      theadHtml += solaireLignes[solaireLignes.length - 1].innerHtml;
+    } else if (solaireLignes.length === 1 && solOffset > 0) {
+      theadHtml += solaireLignes[0].innerHtml;
+    }
     theadHtml += "</tr>";
   }
 
   // Stocker la config pour les étapes suivantes
-  _detailsConfig = { acCols: acCols, e2mCols: e2mCols, offres: offres };
-
-  // ── tbody : une ligne de spinners ─────────────────────────────────────────
-  var tbodyHtml = "<tr>";
-  tbodyHtml += '<td colspan="' + acCols  + '" class="details-spinner-cell">' + spinner + "</td>";
-  tbodyHtml += '<td colspan="' + e2mCols + '" class="details-spinner-cell">' + spinner + "</td>";
-  offres.forEach(function (o) {
-    tbodyHtml += '<td colspan="' + o.cols + '" class="details-spinner-cell">' + spinner + "</td>";
-  });
-  tbodyHtml += "</tr>";
+  _detailsConfig = { acCols: acCols, e2mCols: e2mCols, offres: offres,
+                     solaireCols: solaireCols, solaireSources: solaireSources };
 
   var html = '<div class="details-scroll">' +
     '<table class="details-table">' +
       "<thead>" + theadHtml + "</thead>" +
-      "<tbody id=\"details-tbody\">" + tbodyHtml + "</tbody>" +
+      "<tbody id=\"details-tbody\"></tbody>" +
     "</table></div>";
 
   _contenuPages["details"] = html;
@@ -1788,6 +1903,327 @@ function chargerPageParametres() {
   var el = document.getElementById("settings-content");
   if (!el) return;
   el.innerHTML = _contenuPages["settings"] !== undefined ? _contenuPages["settings"] : _SPINNER_HTML;
+}
+
+function chargerPageModules() {
+  var el = document.getElementById("modules-content");
+  if (!el) return;
+  // Toujours reconstruire la page depuis l'API config
+  el.innerHTML = _SPINNER_HTML;
+  fetch("/api/solaire/config")
+    .then(function (r) { return r.json(); })
+    .then(function (rep) {
+      if (!rep.status) { el.innerHTML = '<p class="debug-vide">Erreur chargement config solaire.</p>'; return; }
+      _solModConfig = rep.data;
+      el.innerHTML = _solModuleHtml(rep.data);
+      _initModulesPage(el);
+    })
+    .catch(function () { el.innerHTML = '<p class="debug-vide">Erreur réseau.</p>'; });
+}
+
+function _solModuleHtml(cfg) {
+  var tarifs  = cfg.tarifs  || {};
+  var sources = cfg.sources || [];
+  var panneau = cfg.panneau || {};
+
+  // Selector tarif
+  var tarOpts = Object.keys(tarifs).map(function (id) {
+    var m = tarifs[id];
+    return '<option value="' + _escHtml(id) + '">'
+      + _escHtml((m.fournisseur || "") + " — " + (m.nom || id)
+        + (m.type && m.type !== "base" ? " (" + m.type + ")" : ""))
+      + "</option>";
+  }).join("");
+
+  // Selector source
+  var srcOpts = sources.map(function (s) {
+    return '<option value="' + _escHtml(s.id) + '">' + _escHtml(s.nom || s.id) + "</option>";
+  }).join("");
+
+  var noTarif  = !tarOpts  ? '<p class="sol-mod-warn">Aucun tarif disponible — lancez une mise à jour.</p>' : "";
+  var noSource = !srcOpts  ? '<p class="sol-mod-warn">Aucune source solaire configurée — allez dans Paramètres → Modules complémentaires → Solaire.</p>' : "";
+
+  var nbMaxLabel = "0–" + (panneau.nb_panneaux_max || 20);
+
+  return '<div class="sol-mod-page">'
+    + '<div class="sol-mod-titre">☀ Solaire — Analyse d\'optimisation</div>'
+    + '<div class="sol-mod-config">'
+      + noTarif + noSource
+      + (tarOpts && srcOpts
+        ? '<div class="sol-mod-row">'
+            + '<div class="sol-mod-field">'
+              + '<label class="sol-mod-label">Tarif de référence</label>'
+              + '<select id="sol-mod-tarif" class="sol-mod-select">' + tarOpts + '</select>'
+            + '</div>'
+            + '<div class="sol-mod-field">'
+              + '<label class="sol-mod-label">Source solaire</label>'
+              + '<select id="sol-mod-source" class="sol-mod-select">' + srcOpts + '</select>'
+            + '</div>'
+            + '<div class="sol-mod-field sol-mod-field-btn">'
+              + '<label class="sol-mod-label">&nbsp;</label>'
+              + '<button class="sol-mod-btn-calc" id="sol-mod-calc-btn" onclick="_solModCalculer()">Calculer</button>'
+            + '</div>'
+          + '</div>'
+          + '<div class="sol-mod-hint">Simule de ' + nbMaxLabel + ' panneaux · ' + (panneau.puissance_wc || 425) + ' Wc · PR ' + (panneau.performance_ratio || 80) + ' %</div>'
+        : "")
+    + '</div>'
+    + '<div id="sol-mod-results"></div>'
+  + '</div>';
+}
+
+function _initModulesPage(el) {
+  // Listeners déjà posés via onclick inline — rien à ajouter
+}
+
+window._solModCalculer = function () {
+  var tarifEl  = document.getElementById("sol-mod-tarif");
+  var sourceEl = document.getElementById("sol-mod-source");
+  var resEl    = document.getElementById("sol-mod-results");
+  var btn      = document.getElementById("sol-mod-calc-btn");
+  if (!tarifEl || !sourceEl || !resEl) return;
+
+  var tariffId = tarifEl.value;
+  var sourceId = sourceEl.value;
+  if (!tariffId || !sourceId) return;
+
+  if (!_consoRecords || !_solaireData) {
+    resEl.innerHTML = '<p class="sol-mod-warn">Données non encore chargées — attendez la fin du chargement initial.</p>';
+    return;
+  }
+
+  if (btn) { btn.disabled = true; btn.textContent = "Calcul…"; }
+  resEl.innerHTML = _SPINNER_HTML;
+
+  // Tarif déjà chargé → calcul immédiat
+  if (_tariffIndex[tariffId]) {
+    _solModDoCalc(tariffId, sourceId);
+    if (btn) { btn.disabled = false; btn.textContent = "Calculer"; }
+    return;
+  }
+
+  // Charger le tarif à la demande
+  var cfg = (_solModConfig || {});
+  var meta = (cfg.tarifs || {})[tariffId] || {};
+  var isCustom = meta.source === "custom";
+
+  function _onLoaded() {
+    if (btn) { btn.disabled = false; btn.textContent = "Calculer"; }
+    if (!_tariffIndex[tariffId]) {
+      resEl.innerHTML = '<p class="sol-mod-warn">Impossible de charger les données du tarif.</p>';
+      return;
+    }
+    _solModDoCalc(tariffId, sourceId);
+  }
+
+  if (isCustom) {
+    fetch("/api/tarif/custom/" + encodeURIComponent(tariffId))
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (data) {
+        if (data && Array.isArray(data.creneaux)) {
+          var idx = {};
+          data.creneaux.forEach(function (c) {
+            var hk = _tariffHourKey(c.ts);
+            if (hk) idx[hk] = { pk: c.prix_kwh || 0 };
+          });
+          _tariffIndex[tariffId] = idx;
+        }
+        _onLoaded();
+      })
+      .catch(function () { _onLoaded(); });
+  } else {
+    var slug = _genSlug(tariffId);
+    fetch("/data/tarif_" + slug + ".ndjson")
+      .then(function (r) { return r.ok ? r.text() : null; })
+      .then(function (texte) {
+        if (texte) {
+          var idx = {};
+          texte.split("\n").forEach(function (ligne) {
+            var l = ligne.trim();
+            if (!l) return;
+            try { var rec = JSON.parse(l); if (rec.t) idx[rec.t] = { pk: rec.pk || 0 }; } catch (e) {}
+          });
+          _tariffIndex[tariffId] = idx;
+        }
+        _onLoaded();
+      })
+      .catch(function () { _onLoaded(); });
+  }
+};
+
+function _solModDoCalc(tariffId, sourceId) {
+  var resEl = document.getElementById("sol-mod-results");
+  if (!resEl) return;
+
+  var cfg     = _solModConfig || {};
+  var panneau = cfg.panneau   || {};
+  var sources = (cfg.tarifs && cfg.tarifs[tariffId] ? (cfg.sources || []) : (_solaireData.sources || []));
+  // Chercher dans les sources solaire chargées
+  var srcList = _solaireData.sources || [];
+  var srcIdx  = -1;
+  var srcInfo = null;
+  for (var i = 0; i < srcList.length; i++) {
+    if (srcList[i].id === sourceId) { srcIdx = i; srcInfo = srcList[i]; break; }
+  }
+  if (srcIdx === -1) {
+    resEl.innerHTML = '<p class="sol-mod-warn">Source introuvable dans les données solaires.</p>';
+    return;
+  }
+
+  var prix    = _tariffIndex[tariffId] || {};
+  var creneaux = _solaireData.creneaux || {};
+  var puissanceWc = parseFloat(panneau.puissance_wc  || 425);
+  var pr          = parseFloat(panneau.performance_ratio || 80) / 100.0;
+  var nbMax       = parseInt(panneau.nb_panneaux_max || 20, 10);
+  var coutPanneau = parseFloat(panneau.cout_panneau  || 900);
+  var facteur1p   = (puissanceWc / 1000.0) * pr;
+
+  // Intersection : conso × tarif × solaire → trié
+  var tsListe = [];
+  for (var ri = 0; ri < _consoRecords.length; ri++) {
+    var r   = _consoRecords[ri];
+    var hk  = _tariffHourKey(r.ts);
+    var pkE = prix[hk];
+    if (!pkE) continue;
+    var solVals = creneaux[r.ts];
+    if (!solVals || !solVals[srcIdx] || solVals[srcIdx].kwh == null) continue;
+    tsListe.push(r.ts);
+  }
+  tsListe.sort();
+
+  if (tsListe.length === 0) {
+    resEl.innerHTML = '<p class="sol-mod-warn">Aucune période commune (solaire × tarif × consommation).</p>';
+    return;
+  }
+
+  // Dernière année glissante
+  var tsFin   = tsListe[tsListe.length - 1];
+  var dtFin   = new Date(tsFin);
+  var dtDeb   = new Date(dtFin);
+  dtDeb.setFullYear(dtDeb.getFullYear() - 1);
+  var tsDeb   = dtDeb.toISOString();
+  var tsPeriode = tsListe.filter(function (ts) { return ts >= tsDeb; });
+
+  if (tsPeriode.length < 48) {
+    resEl.innerHTML = '<p class="sol-mod-warn">Données insuffisantes (' + tsPeriode.length + ' créneaux).</p>';
+    return;
+  }
+
+  // Index rapide conso
+  var consoIdx = {};
+  for (var ci = 0; ci < _consoRecords.length; ci++) {
+    consoIdx[_consoRecords[ci].ts] = _consoRecords[ci].kwh || 0;
+  }
+
+  // Facture sans panneaux (N=0)
+  var consoTotale = 0, facture0 = 0;
+  for (var ti = 0; ti < tsPeriode.length; ti++) {
+    var ts  = tsPeriode[ti];
+    var kwh = consoIdx[ts] || 0;
+    var pk0 = (prix[_tariffHourKey(ts)] || {}).pk || 0;
+    consoTotale += kwh;
+    facture0    += kwh * pk0;
+  }
+
+  // Calcul pour N = 0..nbMax
+  var resultats = [];
+  for (var n = 0; n <= nbMax; n++) {
+    if (n === 0) {
+      resultats.push({ n: 0, production_kwh: 0, excedent_kwh: 0,
+        conso_nette_kwh: Math.round(consoTotale * 10) / 10,
+        facture_eur: Math.round(facture0 * 100) / 100,
+        economie_eur: 0, cout_install: 0, rsi_ans: null });
+      continue;
+    }
+    var facteurN = n * facteur1p;
+    var prodTot = 0, excTot = 0, factureN = 0;
+    for (var si = 0; si < tsPeriode.length; si++) {
+      var ts2  = tsPeriode[si];
+      var cw   = consoIdx[ts2] || 0;
+      var sw   = ((creneaux[ts2][srcIdx] || {}).kwh || 0) * facteurN;
+      var net  = cw - sw;
+      if (net < 0) { excTot += -net; net = 0; }
+      prodTot  += sw;
+      factureN += net * ((prix[_tariffHourKey(ts2)] || {}).pk || 0);
+    }
+    var eco      = Math.round((facture0 - factureN) * 100) / 100;
+    var coutInst = Math.round(n * coutPanneau);
+    var rsi      = (eco > 0.1) ? Math.round(coutInst / eco * 10) / 10 : null;
+    resultats.push({
+      n: n,
+      production_kwh:  Math.round(prodTot  * 10) / 10,
+      excedent_kwh:    Math.round(excTot   * 10) / 10,
+      conso_nette_kwh: Math.round((consoTotale - prodTot + excTot) * 10) / 10,
+      facture_eur:     Math.round(factureN * 100) / 100,
+      economie_eur:    eco,
+      cout_install:    coutInst,
+      rsi_ans:         rsi,
+    });
+  }
+
+  // Nom du tarif
+  var tarifMeta = (cfg.tarifs || {})[tariffId] || {};
+  var tariffNom = (tarifMeta.fournisseur || "") + " — " + (tarifMeta.nom || tariffId)
+    + (tarifMeta.type && tarifMeta.type !== "base" ? " (" + tarifMeta.type + ")" : "");
+
+  resEl.innerHTML = _solModRapportHtml({
+    source:           srcInfo,
+    tariff_nom:       tariffNom,
+    periode_debut:    tsPeriode[0].slice(0, 10),
+    periode_fin:      tsPeriode[tsPeriode.length - 1].slice(0, 10),
+    nb_slots:         tsPeriode.length,
+    conso_totale_kwh: Math.round(consoTotale * 10) / 10,
+    resultats:        resultats,
+  });
+}
+
+function _solModRapportHtml(d) {
+  var rows = d.resultats || [];
+  var nbsp = "\u00a0";
+
+  var lignes = rows.map(function (r) {
+    var best = r.economie_eur > 0 && r.rsi_ans !== null && r.rsi_ans <= 15;
+    var cls  = best ? " sol-mod-row-best" : "";
+    return '<tr class="' + cls + '">'
+      + '<td>' + r.n + '</td>'
+      + '<td class="sol-mod-num">' + _fmtKwh(r.production_kwh) + '</td>'
+      + '<td class="sol-mod-num">' + _fmtKwh(r.excedent_kwh)   + '</td>'
+      + '<td class="sol-mod-num">' + _fmtKwh(r.conso_nette_kwh) + '</td>'
+      + '<td class="sol-mod-num">' + _fmtEur(r.facture_eur)    + '</td>'
+      + '<td class="sol-mod-num">' + (r.economie_eur > 0 ? _fmtEur(r.economie_eur) : "—") + '</td>'
+      + '<td class="sol-mod-num">' + (r.cout_install  > 0 ? _fmtEur(r.cout_install) : "—") + '</td>'
+      + '<td class="sol-mod-num">' + (r.rsi_ans !== null ? r.rsi_ans + nbsp + "ans" : "—") + '</td>'
+      + '</tr>';
+  }).join("");
+
+  return '<div class="sol-mod-rapport">'
+    + '<div class="sol-mod-rapport-header">'
+      + '<span class="sol-mod-rapport-src">Source\u00a0: <strong>' + _escHtml(d.source.nom || d.source.id) + '</strong></span>'
+      + '<span class="sol-mod-rapport-tarif">Tarif\u00a0: <strong>' + _escHtml(d.tariff_nom) + '</strong></span>'
+      + '<span class="sol-mod-rapport-periode">' + d.periode_debut + ' → ' + d.periode_fin
+        + ' (' + d.nb_slots + ' créneaux · ' + _fmtKwh(d.conso_totale_kwh) + ' kWh consommés)</span>'
+    + '</div>'
+    + '<div class="sol-mod-table-wrap">'
+    + '<table class="sol-mod-table">'
+      + '<thead><tr>'
+        + '<th>Panneaux</th>'
+        + '<th>Production<br>(kWh/an)</th>'
+        + '<th>Excédent<br>(kWh/an)</th>'
+        + '<th>Conso nette<br>(kWh/an)</th>'
+        + '<th>Facture est.<br>(€/an)</th>'
+        + '<th>Économie<br>(€/an)</th>'
+        + '<th>Coût install.<br>(€)</th>'
+        + '<th>Retour sur<br>invest.</th>'
+      + '</tr></thead>'
+      + '<tbody>' + lignes + '</tbody>'
+    + '</table>'
+    + '</div>'
+    + '<div class="sol-mod-legende">Les lignes en vert indiquent un retour sur investissement ≤ 15 ans.</div>'
+  + '</div>';
+}
+
+function _fmtEur(v) {
+  if (v == null || isNaN(v)) return "\u2014";
+  return Number(v).toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + "\u00a0€";
 }
 
 function _afficherPageParametres(expose) {
@@ -2165,11 +2601,12 @@ function initDebugPanel() {
 // ─── Mode pas à pas ───────────────────────────────────────────────────────────
 
 var _ETAPES = [
-  { id: "manifest",  label: "Manifest",  url: "/data/manifest.json"  },
-  { id: "masques",   label: "Masques",   url: "/data/masques.json"   },
-  { id: "params",    label: "Params",    url: "/data/params.json"    },
-  { id: "api_conso", label: "API Conso", url: "/data/api_conso.json" },
-  { id: "eco2mix",   label: "Eco2mix",   url: "/data/eco2mix.json"   },
+  { id: "manifest",  label: "Manifest",  url: "/data/manifest.json"         },
+  { id: "masques",   label: "Masques",   url: "/data/masques.json"          },
+  { id: "params",    label: "Params",    url: "/data/params.json"           },
+  { id: "solaire",   label: "Solaire",   url: "/data/solaire_creneaux.json" },
+  { id: "api_conso", label: "API Conso", url: "/data/api_conso.json"        },
+  { id: "eco2mix",   label: "Eco2mix",   url: "/data/eco2mix.json"          },
 ];
 
 // état : { idx, data, resultats: [{ok, ms, resume}|null] }
@@ -2245,6 +2682,9 @@ function _debugEtapeSuivante() {
       _debugAfficherJson(etape.id, etape.label, res.data, ok);
       if (etape.id === "masques" && ok) _appliquerMasques(res.data);
       if (etape.id === "params"  && ok) { verifierHcRequises(res.data); _appliquerParamsGlobaux(res.data); }
+      if (etape.id === "solaire" && ok && res.data && res.data.sources && res.data.sources.length) {
+        _solaireData = res.data;
+      }
       if (etape.id === "eco2mix" && ok) {
         _e2mCreneaux = (res.data || {}).creneaux || {};
         // Rafraîchir les lignes de groupe rendues avant que eco2mix soit disponible
