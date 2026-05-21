@@ -417,6 +417,9 @@ def cmd_import_csv(params: dict, global_param: dict) -> dict:
     nouveaux = {}
     lignes_ignorees = 0
 
+    # Détection automatique du séparateur (tabulation ou point-virgule)
+    sep = "\t" if "\t" in contenu[:500] else ";"
+
     reader = io.StringIO(contenu)
     premiere = True
     for ligne in reader:
@@ -428,20 +431,26 @@ def cmd_import_csv(params: dict, global_param: dict) -> dict:
             premiere = False
             if "debut" in ligne.lower() or "kw" in ligne.lower():
                 continue
-        parties = ligne.split(";")
+        parties = ligne.split(sep)
         if len(parties) < 3:
             lignes_ignorees += 1
             continue
         try:
-            ts_str = parties[0].strip().strip('"')
-            kw_str = parties[2].strip().strip('"').replace(",", ".")
+            ts_debut_str = parties[0].strip().strip('"')
+            ts_fin_str   = parties[1].strip().strip('"')
+            kw_str       = parties[2].strip().strip('"').replace(",", ".")
             kw = float(kw_str)
-            # Conversion : kWh = kW × (10 min / 60 min)
-            kwh = round(kw / 6, 4)
-            # Timestamp : ajouter :00 si pas de secondes, puis timezone Paris
-            if len(ts_str) == 16:   # "2024-04-19T00:00"
-                ts_str += ":00"
-            dt = datetime.fromisoformat(ts_str).replace(tzinfo=TZ_PARIS).astimezone(TZ_UTC)
+            # Ajouter :00 si pas de secondes
+            if len(ts_debut_str) == 16:
+                ts_debut_str += ":00"
+            if len(ts_fin_str) == 16:
+                ts_fin_str += ":00"
+            dt_debut = datetime.fromisoformat(ts_debut_str)
+            dt_fin   = datetime.fromisoformat(ts_fin_str)
+            # Conversion : kWh = kW × durée réelle en heures (indépendant du pas)
+            duree_h = (dt_fin - dt_debut).total_seconds() / 3600.0
+            kwh = round(kw * duree_h, 4)
+            dt = dt_debut.replace(tzinfo=TZ_PARIS).astimezone(TZ_UTC)
             ts_key = dt.isoformat()
             nouveaux[ts_key] = {
                 "ts": ts_key,

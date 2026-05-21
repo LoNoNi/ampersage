@@ -115,6 +115,10 @@ body {
   background: #388e3c;
 }
 
+.debug-toggle-btn.hidden {
+  display: none;
+}
+
 .debug-toggle-btn {
   background: transparent;
   border: 2px solid rgba(255,255,255,0.4);
@@ -1265,6 +1269,40 @@ body {
   line-height: 1.3;
 }
 
+/* ─── En-têtes eco2mix (tableau détails) ─────────────────────────────────── */
+
+.eco2mix-th {
+  background: #e8f0fb;
+  color: #1a3a6c;
+  text-align: center;
+  font-weight: 700;
+}
+
+.eco2mix-th-sub {
+  background: #f0f5ff;
+  color: #2d5a8a;
+  font-weight: 500;
+  font-size: 0.78rem;
+}
+
+.eco2mix-th-unit {
+  display: block;
+  font-size: 0.68rem;
+  font-weight: 400;
+  opacity: 0.8;
+}
+
+/* Cellules de données eco2mix */
+.eco2mix-td {
+  text-align: right;
+}
+
+.eco2mix-td-co2m-total,
+.eco2mix-td-co2mg-total {
+  color: #555;
+  font-size: 0.8rem;
+}
+
 /* Badges couleur CO2 — fond coloré + texte blanc pour contraste sur toute couleur de ligne */
 td.co2-bas {
   background: #1b5e20 !important;
@@ -1370,6 +1408,21 @@ td.co2-haut {
 .gen-detail-hc .gen-detail-type { color: #1a73e8; font-weight: 600; }
 .gen-detail-hp .gen-detail-type { color: #e65100; font-weight: 600; }
 
+/* ─── Colonnes Tempo (fond nuancé HC clair / HP foncé) ───────────────────── */
+.td-tempo-bleu-hc  { background: #eff6ff; color: #1d4ed8; }
+.td-tempo-bleu-hp  { background: #bfdbfe; color: #1d4ed8; }
+.td-tempo-blanc-hc { background: #f9fafb; color: #374151; }
+.td-tempo-blanc-hp { background: #e5e7eb; color: #374151; }
+.td-tempo-rouge-hc { background: #fff5f5; color: #b91c1c; }
+.td-tempo-rouge-hp { background: #fecaca; color: #b91c1c; }
+
+.gen-detail-ligne:hover .td-tempo-bleu-hc  { background: #dbeafe; }
+.gen-detail-ligne:hover .td-tempo-bleu-hp  { background: #93c5fd; }
+.gen-detail-ligne:hover .td-tempo-blanc-hc { background: #f3f4f6; }
+.gen-detail-ligne:hover .td-tempo-blanc-hp { background: #d1d5db; }
+.gen-detail-ligne:hover .td-tempo-rouge-hc { background: #fee2e2; }
+.gen-detail-ligne:hover .td-tempo-rouge-hp { background: #fca5a5; }
+
 /* ─── Infobulle éCO2mix (tooltip global) ─────────────────────────────────── */
 
 .eco2mix-tooltip {
@@ -1468,25 +1521,265 @@ td.co2-haut {
   overflow: hidden;
 }
 
-.gen-rapport-partie-spin {
-  padding: 0.75rem;
-  background: #fafafa;
-  border-bottom: 1px solid #e0e0e0;
-  min-height: 60px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.gen-rapport-entete {
+  padding: 0.65rem 0.85rem 0.5rem;
+  border-bottom: 1px solid #e8eaf0;
+  background: #f8f9ff;
 }
 
-.gen-rapport-spin {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.gen-ri-fournisseur {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1a1a2e;
 }
 
-.gen-rapport-partie-info {
+.gen-ri-offre {
+  font-size: 0.82rem;
+  color: #444;
+  margin-top: 0.1rem;
+}
+
+.gen-ri-validite {
+  font-size: 0.72rem;
+  color: #888;
+  margin-top: 0.2rem;
+}
+
+.gen-ri-rapports {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0.5rem;
   padding: 0.75rem;
 }
+
+.gen-ri-section {
+  border: 1px solid #e0e4f0;
+  border-radius: 6px;
+  padding: 0.45rem 0.6rem;
+  background: #f8f9ff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.gen-ri-section-label {
+  font-size: 0.68rem;
+  color: #666;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+}
+
+.gen-ri-section-valeur {
+  font-size: 0.92rem;
+  font-weight: 600;
+  color: #1a1a2e;
+  white-space: nowrap;
+}
+
+.gen-ri-section-total {
+  color: #1a73e8;
+  font-size: 1rem;
+}
+
+.gen-ri-sous-rapports { display: flex; flex-direction: column; gap: 0.6rem; padding: 0.5rem 0.75rem 0.75rem; }
+
+.gen-ri-sous-rapport { border: 1px solid #e0e4f0; border-radius: 7px; overflow: hidden; }
+.gen-ri-sous-rapport.gen-ri-sr-principal { border-color: #1a73e8; }
+
+.gen-ri-sr-titre { font-size: 0.73rem; font-weight: 600; color: #555; background: #f0f2fa; padding: 0.3rem 0.65rem; border-bottom: 1px solid #e0e4f0; text-transform: uppercase; letter-spacing: 0.03em; }
+.gen-ri-sr-principal .gen-ri-sr-titre { background: #e8f0fe; color: #1a73e8; border-bottom-color: #c5d9fb; }
+
+.gen-ri-sr-warning { font-size: 0.75rem; color: #b45309; background: #fef3c7; padding: 0.25rem 0.65rem; border-bottom: 1px solid #fde68a; }
+.gen-ri-sr-hint    { font-size: 0.75rem; color: #1e6f9f; background: #e8f4fd; padding: 0.25rem 0.65rem; border-bottom: 1px solid #bde0f5; }
+.gen-ri-sr-erreur  { font-size: 0.8rem; color: #b91c1c; padding: 0.5rem 0.65rem; }
+
+/* ─── Grille de sous-rapports (périodes × puissances) ─────────────────────── */
+
+.gen-ri-grille {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.83rem;
+}
+.gen-ri-grille th,
+.gen-ri-grille td {
+  border: 1px solid #e0e4f0;
+  padding: 0;
+  vertical-align: top;
+}
+.gen-ri-grille-coin {
+  background: #f5f6fa;
+}
+.gen-ri-grille-th-puissance {
+  background: #f0f2fa;
+  font-weight: 600;
+  color: #444;
+  font-size: 0.75rem;
+  text-align: center;
+  padding: 0.4rem 0.5rem;
+  white-space: nowrap;
+}
+.gen-ri-grille-th-puissance.principale {
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+.gen-ri-grille-th-periode {
+  background: #f0f2fa;
+  font-weight: 600;
+  color: #444;
+  font-size: 0.72rem;
+  text-align: left;
+  padding: 0.4rem 0.55rem;
+  white-space: nowrap;
+  writing-mode: horizontal-tb;
+}
+.gen-ri-grille-th-periode.principale {
+  background: #e8f0fe;
+  color: #1a73e8;
+}
+.gen-ri-grille-cell {
+  padding: 0;
+  min-width: 130px;
+}
+.gen-ri-grille-cell.principale {
+  background: #f8fbff;
+}
+/* Dans la grille, le titre du sous-rapport est masqué (les headers font office de titre) */
+.gen-ri-grille-cell .gen-ri-sr-titre { display: none; }
+.gen-ri-grille-cell .gen-ri-sous-rapport { border: none; border-radius: 0; }
+.gen-ri-grille-cell .gen-ri-rapports { gap: 0.3rem; padding: 0.4rem 0.4rem; grid-template-columns: repeat(2, 1fr); }
+.gen-ri-grille-cell .gen-ri-section { padding: 0.3rem 0.4rem; }
+
+/* ─── Barre de contrôles rapides (accueil) ────────────────────────────────── */
+
+.gen-controles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  align-items: flex-end;
+  background: #f5f6fa;
+  border: 1px solid #e0e4f0;
+  border-radius: 8px;
+  padding: 0.6rem 0.9rem;
+  margin-bottom: 1rem;
+}
+.gen-ctrl-item {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+.gen-ctrl-label {
+  font-size: 0.78rem;
+  color: #555;
+  white-space: nowrap;
+}
+.gen-ctrl-input {
+  border: 1px solid #c5d0e8;
+  border-radius: 5px;
+  padding: 0.25rem 0.45rem;
+  font-size: 0.82rem;
+  width: auto;
+  max-width: 160px;
+}
+.gen-ctrl-input:focus { border-color: #1a73e8; outline: none; }
+.gen-ctrl-btn {
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 0.28rem 0.65rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.gen-ctrl-btn:hover:not(:disabled) { background: #1558c0; }
+.gen-ctrl-btn:disabled { opacity: 0.6; cursor: default; }
+
+/* ─── Carte configuration générale ────────────────────────────────────────── */
+
+.params-globaux-card {
+  border: 1px solid #e0e0e8;
+  border-radius: 8px;
+  margin-bottom: 1.25rem;
+  overflow: hidden;
+}
+
+.params-globaux-header {
+  background: #1a73e8;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  padding: 0.5rem 0.75rem;
+  letter-spacing: 0.02em;
+}
+
+.params-globaux-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  padding: 0.75rem;
+  background: #f8f9ff;
+}
+
+.params-globaux-ligne {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  flex-wrap: wrap;
+}
+
+.params-globaux-label {
+  font-size: 0.78rem;
+  color: #555;
+  min-width: 160px;
+}
+
+.params-globaux-ctrl {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.params-globaux-input {
+  border: 1px solid #c5d0e8;
+  border-radius: 5px;
+  padding: 0.28rem 0.5rem;
+  font-size: 0.83rem;
+  width: 6rem;
+}
+.params-globaux-input-lg { width: 22rem; }
+.params-globaux-input:focus { border-color: #1a73e8; outline: none; }
+
+.params-globaux-unite {
+  font-size: 0.78rem;
+  color: #888;
+}
+
+.params-globaux-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding-top: 0.3rem;
+  border-top: 1px solid #e0e4f0;
+  margin-top: 0.2rem;
+}
+
+.params-globaux-save-btn {
+  background: #1a73e8;
+  color: #fff;
+  border: none;
+  border-radius: 5px;
+  padding: 0.3rem 0.75rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  margin-left: auto;
+}
+.params-globaux-save-btn:hover:not(:disabled) { background: #1558c0; }
+.params-globaux-save-btn:disabled { opacity: 0.6; cursor: default; }
+
+.params-globaux-msg { font-size: 0.78rem; }
+.params-globaux-msg.ok  { color: #15803d; }
+.params-globaux-msg.err { color: #b91c1c; }
 
 /* ─── Paramètres génériques ────────────────────────────────────────────────── */
 
@@ -1531,6 +1824,15 @@ td.co2-haut {
 .gen-pi-td {
   padding: 0.35rem 0.6rem;
   border: 1px solid #e0e0e8;
+}
+
+.gen-pi-active td {
+  background: #e8f0fe;
+  font-weight: 600;
+}
+
+.gen-pi-table + .gen-pi-table {
+  margin-top: 1rem;
 }
 
 /* ─── Tableau détails ──────────────────────────────────────────────────────── */
@@ -1705,3 +2007,37 @@ td.co2-haut {
   white-space: nowrap;
 }
 
+
+/* ── Tooltip décomposition prix Sobry ─────────────────────────────────────── */
+
+.detail-tip {
+  position: relative;
+  cursor: help;
+  border-bottom: 1px dotted currentColor;
+}
+
+.detail-tip::before {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: #1e293b;
+  color: #e2e8f0;
+  padding: 7px 12px;
+  border-radius: 5px;
+  font-size: 11px;
+  font-family: monospace;
+  white-space: pre;
+  line-height: 1.7;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  z-index: 300;
+  box-shadow: 0 3px 12px rgba(0,0,0,0.45);
+  min-width: 220px;
+}
+
+.detail-tip:hover::before {
+  opacity: 1;
+}

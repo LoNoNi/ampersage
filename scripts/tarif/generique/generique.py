@@ -26,6 +26,7 @@ Unités dans les fichiers tarif_*.json :
   kwh.ht/ttc          : €/kWh  (différent des modules trv_* qui utilisent c€/kWh)
 """
 
+import importlib.util
 import json
 import logging
 import re
@@ -111,6 +112,25 @@ def _deduire_kva(pmax_kw, abonnements):
     return kvas[-1]
 
 
+# ─── Chargement dynamique de modules custom ──────────────────────────────────
+
+def _charger_module_custom(rep_module, nom_module):
+    # type: (str, str) -> Optional[object]
+    """Charge dynamiquement un module Python custom depuis son répertoire."""
+    chemin = Path(rep_module) / "{}.py".format(nom_module)
+    if not chemin.exists():
+        logger.warning("Module custom introuvable : %s", chemin)
+        return None
+    try:
+        spec   = importlib.util.spec_from_file_location(nom_module, chemin)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        return module
+    except Exception as exc:
+        logger.warning("Erreur chargement module custom %s : %s", nom_module, exc)
+        return None
+
+
 # ─── Scanner les fichiers tarif ───────────────────────────────────────────────
 
 def _scanner_tarifs(tarif_dir):
@@ -145,6 +165,29 @@ def _scanner_tarifs(tarif_dir):
                         "source":  "dédié",
                         "fichier": str(f.relative_to(tarif_dir)),
                         "data":    data,
+                    })
+                except Exception as e:
+                    logger.warning("Erreur lecture %s : %s", f, e)
+
+    # Répertoires frères de generique (scripts/tarif/*/tarif_*.json)
+    # Contiennent les modules custom : chaque répertoire est un module autonome.
+    scripts_tarif_dir = tarif_dir.parent.parent  # scripts/tarif/
+    generique_dir     = tarif_dir.parent          # scripts/tarif/generique/ — déjà traité
+    if scripts_tarif_dir.exists():
+        for module_dir in sorted(scripts_tarif_dir.iterdir()):
+            if not module_dir.is_dir():
+                continue
+            if module_dir.name.startswith("_") or module_dir == generique_dir:
+                continue
+            for f in sorted(module_dir.glob("tarif_*.json")):
+                try:
+                    with open(f, "r", encoding="utf-8") as fp:
+                        data = json.load(fp)
+                    resultats.append({
+                        "source":     "custom",
+                        "fichier":    str(f),        # chemin absolu (module hors generique)
+                        "rep_module": str(module_dir),
+                        "data":       data,
                     })
                 except Exception as e:
                     logger.warning("Erreur lecture %s : %s", f, e)
@@ -200,7 +243,7 @@ def _mettre_a_jour_index(tarifs):
 
             if existant is None:
                 cle = "{}__{}__{}__{:d}".format(fournisseur, nom, type_offre, next_id)
-                offres[cle] = {
+                entree = {
                     "fournisseur":    fournisseur,
                     "nom":            nom,
                     "type":           type_offre,
@@ -209,6 +252,15 @@ def _mettre_a_jour_index(tarifs):
                     "offre_index":    i,
                     "plage_hc_tarif": offre.get("plage_hc"),
                 }
+                if type_offre == "custom":
+                    entree["module"]     = offre.get("module", "")
+                    entree["rep_module"] = tarif.get("rep_module", "")
+                    # Champs de configuration spécifiques à l'offre (ex: produit pour Sobry)
+                    entree["offre_config"] = {
+                        k: v for k, v in offre.items()
+                        if k not in ("nom", "type", "module")
+                    }
+                offres[cle] = entree
                 next_id += 1
                 modifie  = True
 
@@ -433,13 +485,13 @@ def _resoudre_masques(resultat, mode_prix, kva_user=6):
     type_offre = resultat.get("type", "")
     offre      = resultat.get("detail_tarif", {})
 
-    # Variables connues au moment du pipeline — substituées ici, pas côté JS
+    # Variables statiques substituées côté Python — les agrégats sont calculés côté client
     vars_offre = {
-        "fournisseur":        resultat.get("fournisseur", ""),
-        "offre":              resultat.get("offre", ""),
-        "type":               type_offre,
+        "fournisseur":         resultat.get("fournisseur", ""),
+        "offre":               resultat.get("offre", ""),
+        "type":                type_offre,
         "puissance_souscrite": str(kva_user),
-        "date_validite":      offre.get("grille_en_vigueur_depuis", ""),
+        "date_validite":       offre.get("grille_en_vigueur_depuis", ""),
     }
 
     def _subst(html):
@@ -447,20 +499,27 @@ def _resoudre_masques(resultat, mode_prix, kva_user=6):
             html = html.replace("{" + k + "}", v)
         return html
 
-    couleur_fond  = _resoudre_masque("rapport_fond",  fournisseur_slug, offre_slug).strip()
-    rapport_outer = (
-        _resoudre_masque("rapport_outer", fournisseur_slug, offre_slug)
+    # ── Rapport : card wrapper + sous-rapport template (sections avec data-slot) ─
+    couleur_fond = _resoudre_masque("rapport_fond",  fournisseur_slug, offre_slug).strip()
+    style_css    = _resoudre_masque("rapport_style", fournisseur_slug, offre_slug)
+
+    rapport_tpl = (
+        _resoudre_masque("rapport", fournisseur_slug, offre_slug)
         .replace("{couleur_fond}", couleur_fond or "#f4f4f8")
+        .replace("{style_css}",    style_css)
+        .replace("{offre_id}",     offre_id)
     )
-    rapport_section = _resoudre_masque("rapport_section", fournisseur_slug, offre_slug)
-    rapport_spin    = _resoudre_masque("rapport_spin",    fournisseur_slug, offre_slug)
-    style_css       = _resoudre_masque("rapport_style",   fournisseur_slug, offre_slug)
-    rapport_inner   = (
-        _resoudre_masque("rapport_inner", fournisseur_slug, offre_slug)
-        .replace("{rapport_section}", rapport_section)
-        .replace("{rapport_spin}",    rapport_spin)
-        .replace("{style_css}",       style_css)
-    )
+
+    _SECTIONS_RAPPORT = [
+        "kva", "abonnement_mois", "conso_kwh_an",
+        "cout_elec_an", "abonnement_an", "cout_mois_moyen",
+    ]
+    ss_tpl = _resoudre_masque("rapport_sous_rapport", fournisseur_slug, offre_slug)
+    for nom_section in _SECTIONS_RAPPORT:
+        section_html = _resoudre_masque(
+            "rapport_section_{}".format(nom_section), fournisseur_slug, offre_slug
+        )
+        ss_tpl = ss_tpl.replace("{section_" + nom_section + "}", section_html)
 
     params_outer     = _resoudre_masque("params_outer")
     params_inner_tpl = (
@@ -471,8 +530,9 @@ def _resoudre_masques(resultat, mode_prix, kva_user=6):
     params_inner = params_inner_tpl.replace("{lignes}", lignes)
 
     return {
-        "rapport":        _subst(_assembler_outer_inner(rapport_outer, offre_id, rapport_inner)),
-        "params":         _subst(_assembler_outer_inner(params_outer,  offre_id, params_inner)),
+        "rapport":             _subst(rapport_tpl),
+        "rapport_sous_rapport": _subst(ss_tpl),
+        "params":              _subst(_assembler_outer_inner(params_outer, offre_id, params_inner)),
         "detail_bandeau": _subst(
             _resoudre_masque("detail_bandeau_{}".format(type_offre), fournisseur_slug, offre_slug)
             or _resoudre_masque("detail_bandeau")
@@ -653,6 +713,8 @@ class ScriptGenerique(BaseTarif):
         resultats           = []
         hc_requises         = []   # offres HPHC sans plage HC configurée
         offres_plage_hc_maj = dict(param.get("offres_plage_hc", {}))
+        custom_masques      = {}   # masques pour les offres custom (hors resultats)
+        custom_config       = []   # config pour les offres custom
 
         for cle, meta in index["offres"].items():
 
@@ -673,8 +735,74 @@ class ScriptGenerique(BaseTarif):
             offre      = offres_json[offre_idx]
             type_offre = meta["type"]
 
-            # Types non supportés pour l'instant
+            # Offres custom : masques via GET_MASKS du module, pas de ndjson calculé
             if type_offre == "custom":
+                module_nom     = meta.get("module", "")
+                rep_module_str = meta.get("rep_module", "")
+                if module_nom and rep_module_str:
+                    m_custom = _charger_module_custom(rep_module_str, module_nom)
+                    if m_custom:
+                        try:
+                            offre_config = meta.get("offre_config", {})
+                            rep_masks = m_custom.run("GET_MASKS", offre_config, global_param)
+                            if rep_masks.get("status"):
+                                tpls = rep_masks.get("data", {})
+                                vars_offre = {
+                                    "fournisseur":         meta["fournisseur"],
+                                    "offre":               meta["nom"],
+                                    "type":                "custom",
+                                    "puissance_souscrite": str(int(round(pmax_periode))),
+                                    "offre_id":            cle,
+                                }
+                                def _s(html, _v=vars_offre):
+                                    for k, v in _v.items():
+                                        html = html.replace("{" + k + "}", v)
+                                    return html
+
+                                # Rapport : templates génériques avec couleur custom
+                                couleur_fond = "#e8f0fe"
+                                rapport_tpl  = _resoudre_masque("rapport")
+                                rapport_html = _s(
+                                    rapport_tpl
+                                    .replace("{couleur_fond}", couleur_fond)
+                                    .replace("{style_css}",    "")
+                                    .replace("{date_validite}", "")
+                                )
+                                # Sous-rapport avec sections
+                                ss_tpl = _resoudre_masque("rapport_sous_rapport")
+                                _SECTIONS = [
+                                    "kva", "abonnement_mois", "conso_kwh_an",
+                                    "cout_elec_an", "abonnement_an", "cout_mois_moyen",
+                                ]
+                                for _sec in _SECTIONS:
+                                    ss_tpl = ss_tpl.replace(
+                                        "{section_" + _sec + "}",
+                                        _resoudre_masque("rapport_section_{}".format(_sec)),
+                                    )
+                                ss_html = _s(ss_tpl)
+
+                                custom_masques[cle] = {
+                                    "params":              _s(tpls.get("params", "")),
+                                    "detail_bandeau":      _s(tpls.get("detail_bandeau", "")),
+                                    "detail_ligne":        tpls.get("detail_ligne", ""),
+                                    "custom_script":       tpls.get("custom_script", ""),
+                                    "rapport":             rapport_html,
+                                    "rapport_sous_rapport": ss_html,
+                                    "custom":              True,
+                                    "save_groupe":         tpls.get("save_groupe", ""),
+                                }
+                        except Exception as exc:
+                            logger.warning("generique GET_MASKS custom %s : %s", cle, exc)
+                custom_config.append({
+                    "id":          cle,
+                    "fournisseur": meta["fournisseur"],
+                    "nom":         meta["nom"],
+                    "type":        "custom",
+                    "kva":         None,
+                    "source":      "custom",
+                    "config":      {},
+                    "module":      module_nom,
+                })
                 continue
 
             # Tranche kVA applicable : plus petit palier de l'offre couvrant le pmax observé
@@ -779,6 +907,10 @@ class ScriptGenerique(BaseTarif):
         if hc_requises:
             config_data["hc_requises"] = hc_requises
 
+        # Fusion des offres custom (masques + config)
+        masques.update(custom_masques)
+        config_offres.extend(custom_config)
+
         _ecrire_json(MASQUES_FILE, masques)
         _ecrire_json(CONFIG_FILE, config_data)
 
@@ -808,6 +940,12 @@ class ScriptGenerique(BaseTarif):
         data = _lire_json(CONFIG_FILE)
         if data is None:
             return _reponse(False, "GET_CONFIG", error="Fichier config absent — lancez UPDATE")
+        # Injecter rapport_config depuis global_param (non stocké dans generique_config.json)
+        rc = (global_param or {}).get("rapport_config")
+        if rc is not None:
+            data = dict(data)
+            data["params"] = dict(data.get("params", {}))
+            data["params"]["rapport_config"] = rc
         return _reponse(True, "GET_CONFIG", data=data)
 
     def cmd_get_tarif(self, params, global_param):

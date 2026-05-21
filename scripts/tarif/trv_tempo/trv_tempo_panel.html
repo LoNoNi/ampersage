@@ -259,20 +259,11 @@
     });
   }
 
+  /* Tarifs en lecture seule — seules les plages horaires sont modifiables. */
   window.getParams_trv_tempo = function () {
-    var tranches = [];
-    document.querySelectorAll('#trv-tempo-tbody tr').forEach(function (tr) {
-      var row = { puissance: parseInt(tr.dataset.puissance), extinction: tr.querySelector('[data-col="extinction"]').checked };
-      row.abonnement = parseFloat(tr.querySelector('[data-col="abonnement"]').value);
-      COLS.forEach(function (col) {
-        row[col] = parseFloat(tr.querySelector('[data-col="' + col + '"]').value);
-      });
-      tranches.push(row);
-    });
-    var plage_hc          = document.getElementById('trv-tempo-plage-hc');
-    var changement_jour   = document.getElementById('trv-tempo-changement-jour');
+    var plage_hc        = document.getElementById('trv-tempo-plage-hc');
+    var changement_jour = document.getElementById('trv-tempo-changement-jour');
     return {
-      tranches:              tranches,
       plage_hc:              plage_hc        ? plage_hc.value        : '22h00→6h00',
       heure_changement_jour: changement_jour ? changement_jour.value : '6h00',
     };

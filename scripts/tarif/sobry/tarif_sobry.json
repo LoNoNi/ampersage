@@ -1,0 +1,8 @@
+{
+  "fournisseur": "Sobry",
+  "date_extraction": "2026-04-30",
+  "offres": [
+    {"nom": "SoCap", "type": "custom", "module": "sobry", "produit": "socap"},
+    {"nom": "SoFlex", "type": "custom", "module": "sobry", "produit": "soflex"}
+  ]
+}

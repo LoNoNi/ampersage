@@ -25,6 +25,11 @@ version_check.json
 *_data.json
 *_cache.json
 
+# Fichiers de tarifs générés au runtime par le module generique
+scripts/tarif/generique/generique_tarif_*.json
+scripts/tarif/generique/tarif/tarif_*.json
+scripts/tarif/trv_tempo/tarif_trv_tempo.json
+
 # Fichiers générés au runtime par les scripts (index, config, masques)
 *_config.json
 *_index.json

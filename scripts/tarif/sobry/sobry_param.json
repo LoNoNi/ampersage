@@ -1,11 +1,10 @@
 {
   "adresse": "https://api.sobry.co/api/prices/raw",
   "commentaire": "Script Sobry — tarif dynamique EPEX Spot",
-  "puissance_souscrite": 6,
   "granularity": "hourly",
   "display": "TTC",
   "turpe_actifs": [
-    "LU"
+    "MU4"
   ],
   "marge_ht": 0.008,
   "marge_ttc": 0.0096,
@@ -25,175 +24,347 @@
     "prime_ht": 0.002,
     "prime_ttc": 0.0024
   },
-  "tranches": [
+  "tranches_cu4": [
     {
       "puissance": 3,
-      "abonnement": 9.53,
+      "abonnement": 9.76,
       "extinction": false
     },
     {
       "puissance": 4,
-      "abonnement": 10.53,
+      "abonnement": 12.26,
       "extinction": false
     },
     {
       "puissance": 5,
-      "abonnement": 11.52,
+      "abonnement": 14.37,
       "extinction": false
     },
     {
       "puissance": 6,
-      "abonnement": 12.52,
+      "abonnement": 16.29,
       "extinction": false
     },
     {
       "puissance": 7,
-      "abonnement": 13.52,
+      "abonnement": 18.08,
       "extinction": false
     },
     {
       "puissance": 8,
-      "abonnement": 14.51,
+      "abonnement": 19.77,
       "extinction": false
     },
     {
       "puissance": 9,
-      "abonnement": 15.51,
+      "abonnement": 21.4,
       "extinction": false
     },
     {
       "puissance": 10,
-      "abonnement": 16.51,
+      "abonnement": 22.97,
       "extinction": false
     },
     {
       "puissance": 11,
-      "abonnement": 17.5,
+      "abonnement": 24.5,
       "extinction": false
     },
     {
       "puissance": 12,
-      "abonnement": 18.5,
+      "abonnement": 25.99,
       "extinction": false
     },
     {
       "puissance": 13,
-      "abonnement": 19.5,
+      "abonnement": 27.45,
       "extinction": false
     },
     {
       "puissance": 14,
-      "abonnement": 20.49,
+      "abonnement": 28.88,
       "extinction": false
     },
     {
       "puissance": 15,
-      "abonnement": 21.49,
+      "abonnement": 30.29,
       "extinction": false
     },
     {
       "puissance": 16,
-      "abonnement": 23.79,
+      "abonnement": 31.68,
       "extinction": false
     },
     {
       "puissance": 17,
-      "abonnement": 26.1,
+      "abonnement": 33.05,
       "extinction": false
     },
     {
       "puissance": 18,
-      "abonnement": 28.4,
+      "abonnement": 34.4,
       "extinction": false
     },
     {
       "puissance": 19,
-      "abonnement": 28.9,
+      "abonnement": 35.73,
       "extinction": false
     },
     {
       "puissance": 20,
-      "abonnement": 29.4,
+      "abonnement": 37.05,
       "extinction": false
     },
     {
       "puissance": 21,
-      "abonnement": 29.9,
+      "abonnement": 38.36,
       "extinction": false
     },
     {
       "puissance": 22,
-      "abonnement": 30.39,
+      "abonnement": 39.66,
       "extinction": false
     },
     {
       "puissance": 23,
-      "abonnement": 30.89,
+      "abonnement": 40.94,
       "extinction": false
     },
     {
       "puissance": 24,
-      "abonnement": 31.39,
+      "abonnement": 42.21,
       "extinction": false
     },
     {
       "puissance": 25,
-      "abonnement": 33.57,
+      "abonnement": 43.48,
       "extinction": false
     },
     {
       "puissance": 26,
-      "abonnement": 35.75,
+      "abonnement": 44.73,
       "extinction": false
     },
     {
       "puissance": 27,
-      "abonnement": 37.93,
+      "abonnement": 45.98,
       "extinction": false
     },
     {
       "puissance": 28,
-      "abonnement": 40.1,
+      "abonnement": 47.22,
       "extinction": false
     },
     {
       "puissance": 29,
-      "abonnement": 42.28,
+      "abonnement": 48.45,
       "extinction": false
     },
     {
       "puissance": 30,
-      "abonnement": 44.46,
+      "abonnement": 49.67,
       "extinction": false
     },
     {
       "puissance": 31,
-      "abonnement": 45.78,
+      "abonnement": 50.89,
       "extinction": false
     },
     {
       "puissance": 32,
-      "abonnement": 47.1,
+      "abonnement": 52.1,
       "extinction": false
     },
     {
       "puissance": 33,
-      "abonnement": 48.43,
+      "abonnement": 53.31,
       "extinction": false
     },
     {
       "puissance": 34,
-      "abonnement": 49.75,
+      "abonnement": 54.51,
       "extinction": false
     },
     {
       "puissance": 35,
-      "abonnement": 51.07,
+      "abonnement": 55.7,
       "extinction": false
     },
     {
       "puissance": 36,
-      "abonnement": 52.39,
+      "abonnement": 56.89,
+      "extinction": false
+    }
+  ],
+  "tranches_mu4": [
+    {
+      "puissance": 3,
+      "abonnement": 10.26,
+      "extinction": false
+    },
+    {
+      "puissance": 4,
+      "abonnement": 12.93,
+      "extinction": false
+    },
+    {
+      "puissance": 5,
+      "abonnement": 15.21,
+      "extinction": false
+    },
+    {
+      "puissance": 6,
+      "abonnement": 17.29,
+      "extinction": false
+    },
+    {
+      "puissance": 7,
+      "abonnement": 19.25,
+      "extinction": false
+    },
+    {
+      "puissance": 8,
+      "abonnement": 21.11,
+      "extinction": false
+    },
+    {
+      "puissance": 9,
+      "abonnement": 22.91,
+      "extinction": false
+    },
+    {
+      "puissance": 10,
+      "abonnement": 24.65,
+      "extinction": false
+    },
+    {
+      "puissance": 11,
+      "abonnement": 26.34,
+      "extinction": false
+    },
+    {
+      "puissance": 12,
+      "abonnement": 28.0,
+      "extinction": false
+    },
+    {
+      "puissance": 13,
+      "abonnement": 29.63,
+      "extinction": false
+    },
+    {
+      "puissance": 14,
+      "abonnement": 31.23,
+      "extinction": false
+    },
+    {
+      "puissance": 15,
+      "abonnement": 32.81,
+      "extinction": false
+    },
+    {
+      "puissance": 16,
+      "abonnement": 34.36,
+      "extinction": false
+    },
+    {
+      "puissance": 17,
+      "abonnement": 35.9,
+      "extinction": false
+    },
+    {
+      "puissance": 18,
+      "abonnement": 37.41,
+      "extinction": false
+    },
+    {
+      "puissance": 19,
+      "abonnement": 38.92,
+      "extinction": false
+    },
+    {
+      "puissance": 20,
+      "abonnement": 40.4,
+      "extinction": false
+    },
+    {
+      "puissance": 21,
+      "abonnement": 41.88,
+      "extinction": false
+    },
+    {
+      "puissance": 22,
+      "abonnement": 43.34,
+      "extinction": false
+    },
+    {
+      "puissance": 23,
+      "abonnement": 44.79,
+      "extinction": false
+    },
+    {
+      "puissance": 24,
+      "abonnement": 46.23,
+      "extinction": false
+    },
+    {
+      "puissance": 25,
+      "abonnement": 47.67,
+      "extinction": false
+    },
+    {
+      "puissance": 26,
+      "abonnement": 49.09,
+      "extinction": false
+    },
+    {
+      "puissance": 27,
+      "abonnement": 50.5,
+      "extinction": false
+    },
+    {
+      "puissance": 28,
+      "abonnement": 51.91,
+      "extinction": false
+    },
+    {
+      "puissance": 29,
+      "abonnement": 53.31,
+      "extinction": false
+    },
+    {
+      "puissance": 30,
+      "abonnement": 54.7,
+      "extinction": false
+    },
+    {
+      "puissance": 31,
+      "abonnement": 56.08,
+      "extinction": false
+    },
+    {
+      "puissance": 32,
+      "abonnement": 57.46,
+      "extinction": false
+    },
+    {
+      "puissance": 33,
+      "abonnement": 58.83,
+      "extinction": false
+    },
+    {
+      "puissance": 34,
+      "abonnement": 60.2,
+      "extinction": false
+    },
+    {
+      "puissance": 35,
+      "abonnement": 61.56,
+      "extinction": false
+    },
+    {
+      "puissance": 36,
+      "abonnement": 62.92,
       "extinction": false
     }
   ]

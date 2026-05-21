@@ -920,14 +920,11 @@ def get_co2_slots(ts_list: list) -> dict:
             cr_moyen = dict(candidats[0])
             cr_moyen["mix"] = mix_moyen
             co2_marg_data = calcul_co2_marginal(cr_moyen)
-            # Alléger : filieres_retenues recalculées côté JS
-            co2_marg_lean = {k: v for k, v in co2_marg_data.items()
-                             if k != "filieres_retenues"} if co2_marg_data else None
 
             resultats[ts] = {
                 "date_heure":   dt15_a.isoformat(),
                 "co2_moyen":    {"taux_gco2_kwh": co2_moyen_val},
-                "co2_marginal": co2_marg_lean,
+                "co2_marginal": co2_marg_data,
                 "mix":          mix_moyen,
                 "echanges":     candidats[0].get("echanges", {}),
                 "source_donnee": "cache",

@@ -55,6 +55,9 @@ _relancer_pipeline_fn = None
 _relancer_tarifs_fn = None
 _importer_csv_fn = None
 
+# Cache des résultats custom (invalidé à chaque nouveau pipeline)
+_cache_custom: dict = {}
+
 app = Flask(__name__, static_folder=str(WEB_DIR))
 
 
@@ -330,8 +333,15 @@ def api_save_params():
     if groupe == "global":
         _global_param.update(params)
         _sauvegarder_params()
+        _cache_custom.clear()
         if _relancer_pipeline_fn:
             _relancer_pipeline_fn()
+        return jsonify({"status": True, "data": params})
+
+    # Groupe spécial : config rapports (stockée dans global_param)
+    if groupe == "rapport_config":
+        _global_param.update(params)
+        _sauvegarder_params()
         return jsonify({"status": True, "data": params})
 
     # Groupe script : appelle SET_PARAM
@@ -347,15 +357,64 @@ def api_save_params():
 
     if reponse.get("status"):
         _sauvegarder_params()
+        _cache_custom.clear()
         if _relancer_pipeline_fn:
             _relancer_pipeline_fn()
 
     return jsonify(reponse)
 
 
+@app.route("/api/tarif/custom/<offre_id>", methods=["GET"])
+def api_tarif_custom(offre_id: str):
+    """Calcule et retourne les créneaux d'une offre custom (cache invalidé à chaque pipeline)."""
+    global _cache_custom
+    if offre_id in _cache_custom:
+        return jsonify(_cache_custom[offre_id])
+
+    index_file = SCRIPTS_DIR / "tarif" / "generique" / "generique_index.json"
+    if not index_file.exists():
+        return jsonify({"error": "Index generique absent — pipeline non exécuté"}), 503
+
+    with open(index_file, encoding="utf-8") as f:
+        index = json.load(f)
+
+    offre_meta = index.get("offres", {}).get(offre_id)
+    if not offre_meta:
+        return jsonify({"error": "Offre inconnue : {}".format(offre_id)}), 404
+    if offre_meta.get("source") != "custom":
+        return jsonify({"error": "Offre non custom"}), 400
+
+    module_nom = offre_meta.get("module", "")
+    rep_module = offre_meta.get("rep_module", "")
+    if not module_nom or not rep_module:
+        return jsonify({"error": "Module non défini pour cette offre"}), 400
+
+    chemin_module = Path(rep_module) / f"{module_nom}.py"
+    if not chemin_module.exists():
+        return jsonify({"error": f"Module {module_nom} introuvable"}), 404
+
+    try:
+        spec   = importlib.util.spec_from_file_location(module_nom, chemin_module)
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        offre_config = offre_meta.get("offre_config", {})
+        reponse = module.run(mode="GET_CUSTOM", params=offre_config, global_param=_global_param)
+    except Exception as exc:
+        logger.error("GET_CUSTOM %s : %s", offre_id, exc)
+        return jsonify({"error": str(exc)}), 500
+
+    if not reponse.get("status"):
+        return jsonify({"error": reponse.get("error", "Erreur inconnue")}), 500
+
+    data = reponse.get("data", {})
+    _cache_custom[offre_id] = data
+    return jsonify(data)
+
+
 @app.route("/api/trigger_update", methods=["POST"])
 def api_trigger_update():
     """Déclenche manuellement une mise à jour API conso + recalcul des tarifs."""
+    _cache_custom.clear()
     if _relancer_pipeline_fn:
         _relancer_pipeline_fn()
     return jsonify({
@@ -463,6 +522,12 @@ def api_expose():
             modules_comp["eco2mix"] = {"statut": "erreur", "erreur": str(exc)}
     else:
         modules_comp["eco2mix"] = {"statut": "module introuvable"}
+
+    # ── Config globale exposée aux panels ────────────────────────────────────
+    modules_comp["rapport_config"] = {
+        "statut":     "actif",
+        "parametres": {"rapport_config": _global_param.get("rapport_config", {})},
+    }
 
     return jsonify({"fournisseurs": fournisseurs, "modules_complementaires": modules_comp})
 

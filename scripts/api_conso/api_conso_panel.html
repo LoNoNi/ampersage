@@ -391,8 +391,8 @@
               data.data.importes + ' records importés (' + data.data.total + ' au total)',
               true
             );
-            // Rafraîchir l'affichage principal
-            if (typeof chargerContenuPrincipal === 'function') chargerContenuPrincipal();
+            // Recharger records conso + tarifs + détails
+            if (typeof rechargerApresImport === 'function') rechargerApresImport();
           } else {
             setStatus('Erreur : ' + data.error, false);
           }

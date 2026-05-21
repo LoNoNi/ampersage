@@ -1,18 +1,34 @@
 <div class="gen-rapport-inner" data-offre-id="{offre_id}">
   {style_css}
-  <div class="gen-rapport-partie-spin">
-    {rapport_spin}
-  </div>
-  <div class="gen-rapport-partie-info">
+  <div class="gen-rapport-entete">
     <div class="gen-ri-fournisseur">{fournisseur}</div>
-    <div class="gen-ri-validite">{date_validite}</div>
-    <div class="gen-ri-rapports">
-      <div class="gen-ri-rapport" data-rapport-index="0">{rapport_section}</div>
-      <div class="gen-ri-rapport" data-rapport-index="1">{rapport_section}</div>
-      <div class="gen-ri-rapport" data-rapport-index="2">{rapport_section}</div>
-      <div class="gen-ri-rapport" data-rapport-index="3">{rapport_section}</div>
-      <div class="gen-ri-rapport" data-rapport-index="4">{rapport_section}</div>
-      <div class="gen-ri-rapport" data-rapport-index="5">{rapport_section}</div>
+    <div class="gen-ri-offre">{offre} &middot; {type}</div>
+    <div class="gen-ri-validite">en vigueur depuis {date_validite}</div>
+  </div>
+  <div class="gen-ri-rapports">
+    <div class="gen-ri-section">
+      <div class="gen-ri-section-label">Puissance souscrite</div>
+      <div class="gen-ri-section-valeur">{kva}&nbsp;kVA</div>
+    </div>
+    <div class="gen-ri-section">
+      <div class="gen-ri-section-label">Abonnement mensuel</div>
+      <div class="gen-ri-section-valeur">{abonnement_mois}&nbsp;€</div>
+    </div>
+    <div class="gen-ri-section">
+      <div class="gen-ri-section-label">Consommation annuelle</div>
+      <div class="gen-ri-section-valeur">{conso_kwh_an}&nbsp;kWh</div>
+    </div>
+    <div class="gen-ri-section">
+      <div class="gen-ri-section-label">Électricité / an</div>
+      <div class="gen-ri-section-valeur">{cout_elec_an}&nbsp;€</div>
+    </div>
+    <div class="gen-ri-section">
+      <div class="gen-ri-section-label">Abonnement annuel</div>
+      <div class="gen-ri-section-valeur">{abonnement_an}&nbsp;€</div>
+    </div>
+    <div class="gen-ri-section">
+      <div class="gen-ri-section-label">Coût mensuel moyen</div>
+      <div class="gen-ri-section-valeur gen-ri-section-total">{cout_mois_moyen}&nbsp;€</div>
     </div>
   </div>
 </div>

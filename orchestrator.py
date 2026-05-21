@@ -302,6 +302,11 @@ def relancer_pipeline():
         except Exception as exc:
             logger.warning("Pipeline : %s GET_MASKS → %s", nom_tarif, exc)
 
+    # Masque params globaux (résumé puissance souscrite + plage HC)
+    tpl_pg = SCRIPTS_DIR / "tarif" / "generique" / "templates" / "params_globaux.html"
+    if tpl_pg.exists():
+        masques["params_globaux"] = tpl_pg.read_text(encoding="utf-8")
+
     manifest = {}
 
     manifest["masques"] = _ecrire_json_global("masques.json", masques)

@@ -251,6 +251,131 @@ class ScriptTrvTempo(BaseTarif):
         return _reponse(True, "UPDATE", data=data)
 
 
+    def cmd_get_masks(self, params, global_param):
+        """Retourne les templates HTML + script JS de calcul client-side."""
+        def _lire_tpl(nom):
+            p = BASE_DIR / nom
+            return p.read_text(encoding="utf-8") if p.exists() else ""
+
+        param    = self._lire_param() or self.PARAM_DEFAUT
+        plage_hc = param.get("plage_hc",              self.PARAM_DEFAUT["plage_hc"])
+        hcj      = param.get("heure_changement_jour", self.PARAM_DEFAUT["heure_changement_jour"])
+
+        # Panel paramètres — pré-renseigner les valeurs sauvegardées
+        params_html = (
+            _lire_tpl("trv_tempo_panel.html")
+            .replace('value="22h00\u21926h00"', 'value="{}"'.format(plage_hc))
+            .replace('value="6h00"',            'value="{}"'.format(hcj))
+        )
+
+        return _reponse(True, "GET_MASKS", data={
+            "params":         params_html,
+            "detail_bandeau": _lire_tpl("trv_tempo_detail_bandeau.html"),
+            "detail_ligne":   _lire_tpl("trv_tempo_detail_ligne.html"),
+            "custom_script":  _lire_tpl("trv_tempo_custom_script.js"),
+            "save_groupe":    "trv_tempo",
+        })
+
+    def cmd_get_custom(self, params, global_param):
+        """
+        Retourne le calendrier des couleurs Tempo + tarifs de la tranche active.
+        Le JS client (custom_script) calcule ensuite les créneaux 30 min.
+        """
+        if not global_param.get("api_conso_statut", False):
+            return _reponse(False, "GET_CUSTOM", error="API conso non connectée")
+
+        param = self._lire_param()
+        if param is None:
+            return _reponse(False, "GET_CUSTOM", error="Fichier param absent — lancez INIT_PARAM")
+
+        records = global_param.get("DATA", {}).get("api_conso", {}).get("records", [])
+        if not records:
+            return _reponse(False, "GET_CUSTOM", error="Aucune donnée de consommation disponible")
+
+        tranches            = param.get("tranches", self.PARAM_DEFAUT["tranches"])
+        puissance_souscrite = param.get("puissance_souscrite", self.PARAM_DEFAUT["puissance_souscrite"])
+        tranche = next(
+            (t for t in tranches
+             if t["puissance"] == puissance_souscrite and not t.get("extinction", False)),
+            None,
+        )
+        if tranche is None:
+            tranche = next((t for t in tranches if not t.get("extinction", False)), None)
+        if tranche is None:
+            return _reponse(False, "GET_CUSTOM", error="Aucune tranche active trouvée")
+
+        adresse        = param.get("adresse", self.PARAM_DEFAUT["adresse"])
+        changement_min = _parser_heure(
+            param.get("heure_changement_jour", self.PARAM_DEFAUT["heure_changement_jour"])
+        )
+
+        # Déduire les dates Tempo nécessaires depuis les records
+        dates_necessaires = set()
+        for r in records:
+            dt       = datetime.fromisoformat(r["ts"]).astimezone(TZ_PARIS)
+            date_str = _date_tempo(dt, changement_min).isoformat()
+            dates_necessaires.add(date_str)
+
+        # Remplir le cache couleurs pour les dates manquantes
+        cache           = self._lire_cache()
+        cache_couleurs  = cache.get("couleurs", {})
+        cache_modifie   = False
+
+        for date_str in sorted(dates_necessaires):
+            if date_str not in cache_couleurs:
+                couleur, erreur = _couleur_jour(date_str, adresse)
+                if erreur:
+                    return _reponse(False, "GET_CUSTOM",
+                                    error="Erreur API couleur Tempo ({}) : {}".format(date_str, erreur))
+                cache_couleurs[date_str] = couleur
+                cache_modifie = True
+
+        if cache_modifie:
+            cache["couleurs"] = cache_couleurs
+            self._ecrire_cache(cache)
+
+        # Barème complet des tranches actives (format {kva, ht, ttc})
+        abonnements = [
+            {
+                "kva": t["puissance"],
+                "ht":  t["abonnement"],
+                "ttc": round(t["abonnement"] * 1.20, 2),
+            }
+            for t in tranches
+            if not t.get("extinction", False)
+        ]
+
+        return _reponse(True, "GET_CUSTOM", data={
+            "calendrier":            cache_couleurs,
+            "tarifs": {
+                "bleu_hc":  tranche.get("bleu_hc",  0.0),
+                "bleu_hp":  tranche.get("bleu_hp",  0.0),
+                "blanc_hc": tranche.get("blanc_hc", 0.0),
+                "blanc_hp": tranche.get("blanc_hp", 0.0),
+                "rouge_hc": tranche.get("rouge_hc", 0.0),
+                "rouge_hp": tranche.get("rouge_hp", 0.0),
+            },
+            "plage_hc":              param.get("plage_hc",              self.PARAM_DEFAUT["plage_hc"]),
+            "heure_changement_jour": param.get("heure_changement_jour", self.PARAM_DEFAUT["heure_changement_jour"]),
+            "puissance":             tranche["puissance"],
+            "abonnement_mensuel_ht": tranche["abonnement"],
+            "abonnement_mensuel_ttc": round(tranche["abonnement"] * 1.20, 2),
+            "abonnements":           abonnements,
+        })
+
+    def run(self, mode, params=None, global_param=None):
+        """Point d'entrée — étend BaseTarif avec GET_MASKS et GET_CUSTOM."""
+        params       = params or {}
+        global_param = global_param if global_param is not None else {}
+        extra = {
+            "GET_MASKS":  self.cmd_get_masks,
+            "GET_CUSTOM": self.cmd_get_custom,
+        }
+        if mode in extra:
+            return extra[mode](params, global_param)
+        return super().run(mode=mode, params=params, global_param=global_param)
+
+
 _instance = ScriptTrvTempo(BASE_DIR)
 
 

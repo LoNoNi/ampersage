@@ -1,0 +1,30 @@
+<div class="params-globaux-card">
+  <div class="params-globaux-header">Configuration générale</div>
+  <div class="params-globaux-body">
+
+    <div class="params-globaux-ligne">
+      <label class="params-globaux-label" for="pg-puissance-input">Puissance souscrite</label>
+      <div class="params-globaux-ctrl">
+        <input class="params-globaux-input" type="number"
+               id="pg-puissance-input" value="{{puissance_souscrite_val}}"
+               min="1" max="36" step="0.5" placeholder="kVA">
+        <span class="params-globaux-unite">kVA</span>
+      </div>
+    </div>
+
+    <div class="params-globaux-ligne">
+      <label class="params-globaux-label" for="pg-hc-input">Cr&eacute;neaux heures creuses</label>
+      <div class="params-globaux-ctrl">
+        <input class="params-globaux-input params-globaux-input-lg" type="text"
+               id="pg-hc-input" value="{{plage_hc}}"
+               placeholder="ex&nbsp;: 22h00&#8594;6h00 + 12h00&#8594;14h00">
+      </div>
+    </div>
+
+    <div class="params-globaux-footer">
+      <span class="params-globaux-msg" id="pg-msg"></span>
+      <button class="params-globaux-save-btn" id="pg-save-btn">Sauvegarder</button>
+    </div>
+
+  </div>
+</div>

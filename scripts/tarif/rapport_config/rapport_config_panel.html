@@ -1,0 +1,318 @@
+<div class="rc-panel">
+
+  <!-- ── Puissances ───────────────────────────────────────────────────── -->
+  <div class="rc-section">
+    <div class="rc-section-titre">Puissances</div>
+    <table class="rc-table">
+      <thead>
+        <tr>
+          <th class="rc-th rc-th-radio">Principale</th>
+          <th class="rc-th rc-th-check">Secondaire</th>
+          <th class="rc-th">Puissance</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="rc-row" data-rc-id="souscrite">
+          <td class="rc-td-radio"><input type="radio"    name="rc-pp" value="souscrite"></td>
+          <td class="rc-td-check"><input type="checkbox" id="rc-ps-souscrite" data-rc-sec="souscrite"></td>
+          <td class="rc-td-nom">Puissance souscrite</td>
+        </tr>
+        <tr class="rc-row" data-rc-id="conseillee">
+          <td class="rc-td-radio"><input type="radio"    name="rc-pp" value="conseillee"></td>
+          <td class="rc-td-check"><input type="checkbox" id="rc-ps-conseillee" data-rc-sec="conseillee"></td>
+          <td class="rc-td-nom">Puissance conseill&eacute;e <span class="rc-hint">(calcul&eacute;e depuis pmax)</span></td>
+        </tr>
+        <tr class="rc-row rc-row-perso" data-rc-id="perso-puissance">
+          <td class="rc-td-radio"><input type="radio"    name="rc-pp" value="perso-puissance"></td>
+          <td class="rc-td-check"><input type="checkbox" id="rc-ps-perso-p" data-rc-sec="perso-puissance"></td>
+          <td class="rc-td-nom">
+            <span class="rc-nom-label">Personnalis&eacute;e(s)</span>
+            <input type="text" class="rc-input" id="rc-pp-perso-val"
+                   placeholder="ex&nbsp;: 9;12;15" title="kVA s&eacute;par&eacute;s par ;">
+            <span class="rc-hint">kVA</span>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ── Périodes ─────────────────────────────────────────────────────── -->
+  <div class="rc-section">
+    <div class="rc-section-titre">P&eacute;riodes</div>
+    <table class="rc-table">
+      <thead>
+        <tr>
+          <th class="rc-th rc-th-radio">Principale</th>
+          <th class="rc-th rc-th-check">Secondaire</th>
+          <th class="rc-th">P&eacute;riode</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="rc-row" data-rc-id="totale">
+          <td class="rc-td-radio"><input type="radio"    name="rc-periop" value="totale"></td>
+          <td class="rc-td-check"><input type="checkbox" id="rc-perios-totale" data-rc-sec="totale"></td>
+          <td class="rc-td-nom">Totalit&eacute; de la consommation mesur&eacute;e</td>
+        </tr>
+        <tr class="rc-row" data-rc-id="glissante_1an">
+          <td class="rc-td-radio"><input type="radio"    name="rc-periop" value="glissante_1an" checked></td>
+          <td class="rc-td-check"><input type="checkbox" id="rc-perios-glissante_1an" data-rc-sec="glissante_1an" checked></td>
+          <td class="rc-td-nom">Derni&egrave;re ann&eacute;e glissante <span class="rc-hint">(12&nbsp;mois les plus r&eacute;cents)</span></td>
+        </tr>
+        <tr class="rc-row" data-rc-id="glissantes_nan">
+          <td class="rc-td-radio"><input type="radio"    name="rc-periop" value="glissantes_nan"></td>
+          <td class="rc-td-check"><input type="checkbox" id="rc-perios-glissantes_nan" data-rc-sec="glissantes_nan"></td>
+          <td class="rc-td-nom">Derni&egrave;res ann&eacute;es glissantes <span class="rc-hint">(multiples entiers d&rsquo;ann&eacute;es)</span></td>
+        </tr>
+        <tr class="rc-row rc-row-perso" data-rc-id="annee">
+          <td class="rc-td-radio"><input type="radio"    name="rc-periop" value="annee"></td>
+          <td class="rc-td-check"><input type="checkbox" id="rc-perios-annee" data-rc-sec="annee"></td>
+          <td class="rc-td-nom">
+            <span class="rc-nom-label">Ann&eacute;e(s) pr&eacute;cise(s)</span>
+            <input type="text" class="rc-input rc-input-sm" id="rc-periop-annee-val"
+                   placeholder="ex&nbsp;: 2024;2025" title="Ann&eacute;es s&eacute;par&eacute;es par ;">
+          </td>
+        </tr>
+        <tr class="rc-row rc-row-perso" data-rc-id="perso-periode">
+          <td class="rc-td-radio"><input type="radio"    name="rc-periop" value="perso-periode"></td>
+          <td class="rc-td-check"><input type="checkbox" id="rc-perios-perso" data-rc-sec="perso-periode"></td>
+          <td class="rc-td-nom">
+            <span class="rc-nom-label">Personnalis&eacute;e(s)</span>
+            <input type="text" class="rc-input rc-input-lg" id="rc-periop-perso-val"
+                   placeholder="ex&nbsp;: 2024-01-01/2024-12-31;2025-01-01/2025-06-30">
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>
+
+<style>
+.rc-panel { padding: 0.75rem; display: flex; flex-direction: column; gap: 1rem; }
+.rc-section { border: 1px solid #e0e4f0; border-radius: 6px; overflow: hidden; }
+.rc-section-titre { background: #f0f2fa; font-size: 0.78rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #555; padding: 0.4rem 0.7rem; border-bottom: 1px solid #e0e4f0; }
+.rc-table { width: 100%; border-collapse: collapse; }
+.rc-th { font-size: 0.72rem; color: #888; font-weight: 600; text-transform: uppercase; padding: 0.3rem 0.5rem; border-bottom: 1px solid #e8eaf0; background: #fafbff; text-align: center; }
+.rc-th:last-child { text-align: left; }
+.rc-th-radio, .rc-th-check { width: 4rem; }
+.rc-row td { padding: 0.35rem 0.5rem; border-bottom: 1px solid #f0f2f8; vertical-align: middle; }
+.rc-row:last-child td { border-bottom: none; }
+.rc-row:hover td { background: #f8f9ff; }
+.rc-row.rc-row-active td { background: #eef3fd; }
+.rc-td-radio, .rc-td-check { text-align: center; }
+.rc-td-radio input, .rc-td-check input { accent-color: #1a73e8; width: 15px; height: 15px; cursor: pointer; }
+.rc-td-nom { font-size: 0.83rem; color: #333; display: table-cell; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+.rc-nom-label { margin-right: 0.4rem; }
+.rc-hint { font-size: 0.72rem; color: #999; margin-left: 0.25rem; }
+.rc-input { border: 1px solid #ccd; border-radius: 4px; padding: 0.18rem 0.4rem; font-size: 0.81rem; width: 9rem; }
+.rc-input-sm { width: 7rem; }
+.rc-input-lg { width: 18rem; }
+</style>
+
+<script>
+(function () {
+
+  /* ── Règle : principale → secondaire forcé ──────────────────────────── */
+  function _syncPrincipaleVersSecondaire(radioName, secPrefix) {
+    var radios = document.querySelectorAll('input[name="' + radioName + '"]');
+    radios.forEach(function (radio) {
+      radio.addEventListener("change", function () {
+        if (!radio.checked) return;
+        // Cocher la secondaire correspondante
+        var secId = secPrefix + radio.value;
+        var sec = document.getElementById(secId);
+        if (sec) { sec.checked = true; sec.dispatchEvent(new Event("change")); }
+        // Mettre à jour les surlignages
+        _majSurlignes(radioName, secPrefix);
+      });
+    });
+  }
+
+  /* Empêcher de décocher une secondaire si elle est la principale */
+  function _bloquerDecochageSecondaire(radioName, secPrefix) {
+    document.querySelectorAll('[data-rc-sec]').forEach(function (chk) {
+      chk.addEventListener("change", function () {
+        if (chk.checked) return;
+        var radio = document.querySelector(
+          'input[name="' + radioName + '"][value="' + chk.dataset.rcSec + '"]'
+        );
+        if (radio && radio.checked) { chk.checked = true; } // reforcer
+      });
+    });
+  }
+
+  function _majSurlignes(radioName, secPrefix) {
+    var checked = document.querySelector('input[name="' + radioName + '"]:checked');
+    var val = checked ? checked.value : "";
+    document.querySelectorAll('[data-rc-id]').forEach(function (row) {
+      if (row.closest && row.closest('.' + (radioName === 'rc-pp' ? 'rc-section' : 'rc-section'))) {
+        row.classList.toggle("rc-row-active", row.dataset.rcId === val);
+      }
+    });
+  }
+
+  _syncPrincipaleVersSecondaire("rc-pp",     "rc-ps-");
+  _syncPrincipaleVersSecondaire("rc-periop",  "rc-perios-");
+  _bloquerDecochageSecondaire("rc-pp",    "rc-ps-");
+  _bloquerDecochageSecondaire("rc-periop", "rc-perios-");
+
+  /* Init surlignages */
+  _majSurlignes("rc-pp",     "rc-ps-");
+  _majSurlignes("rc-periop", "rc-perios-");
+
+  /* ── Collecteur ──────────────────────────────────────────────────────── */
+  window.getParams_rapport_config = function () {
+    /* Puissance principale */
+    var ppRadio = document.querySelector('input[name="rc-pp"]:checked');
+    var ppVal   = ppRadio ? ppRadio.value : "souscrite";
+    var ppPersoRaw = (document.getElementById("rc-pp-perso-val") || {}).value || "";
+    var puissancePrincipale;
+    if (ppVal === "perso-puissance") {
+      var first = ppPersoRaw.split(";")[0].trim();
+      puissancePrincipale = first ? "perso:" + first : "souscrite";
+    } else {
+      puissancePrincipale = ppVal;
+    }
+
+    /* Puissances secondaires — uniquement les lignes puissance */
+    var _PUISSANCES_IDS = ["souscrite", "conseillee", "perso-puissance"];
+    var puissancesSecondaires = [];
+    document.querySelectorAll('[data-rc-sec]').forEach(function (chk) {
+      if (!chk.checked) return;
+      var nom = chk.dataset.rcSec;
+      if (_PUISSANCES_IDS.indexOf(nom) === -1) return; // ignorer les checkboxes période
+      if (nom === "perso-puissance") {
+        ppPersoRaw.split(";").map(function(s){return s.trim();}).filter(Boolean)
+          .forEach(function(v){ puissancesSecondaires.push("perso:" + v); });
+      } else {
+        puissancesSecondaires.push(nom);
+      }
+    });
+
+    /* Période principale */
+    var ppRadioP  = document.querySelector('input[name="rc-periop"]:checked');
+    var ppValP    = ppRadioP ? ppRadioP.value : "glissante_1an";
+    var anneeRaw  = (document.getElementById("rc-periop-annee-val") || {}).value || "";
+    var persoRaw  = (document.getElementById("rc-periop-perso-val") || {}).value || "";
+    var periodePrincipale = _buildPeriode(ppValP, anneeRaw, persoRaw, true);
+
+    /* Périodes secondaires */
+    var periodesSecondaires = [];
+    document.querySelectorAll('[data-rc-sec]').forEach(function (chk) {
+      if (!chk.checked) return;
+      var nom = chk.dataset.rcSec;
+      // seulement les lignes de période
+      var row = chk.closest('tr[data-rc-id]');
+      if (!row) return;
+      // exclure les lignes puissance
+      var isPuissance = ["souscrite","conseillee","perso-puissance"].indexOf(nom) !== -1;
+      if (isPuissance) return;
+      var periodes = _buildPeriodes(nom, anneeRaw, persoRaw);
+      periodes.forEach(function(p){ periodesSecondaires.push(p); });
+    });
+
+    return {
+      rapport_config: {
+        puissance_principale:   puissancePrincipale,
+        puissances_secondaires: puissancesSecondaires,
+        periode_principale:     periodePrincipale,
+        periodes_secondaires:   periodesSecondaires,
+      }
+    };
+  };
+
+  function _buildPeriode(type, anneeRaw, persoRaw, premiereSeulement) {
+    if (type === "annee") {
+      var a = premiereSeulement
+        ? anneeRaw.split(";")[0].trim()
+        : anneeRaw.split(";").map(function(s){return s.trim();}).filter(Boolean)[0] || "";
+      return { type: "annee", annee: a };
+    }
+    if (type === "perso-periode") {
+      var segs = persoRaw.split(";").map(function(s){return s.trim();}).filter(Boolean);
+      var seg  = premiereSeulement ? segs[0] : segs[0];
+      if (!seg) return { type: "glissante_1an" };
+      var parts = seg.split("/");
+      return parts.length === 2 ? { type: "perso", debut: parts[0], fin: parts[1] } : { type: "glissante_1an" };
+    }
+    return { type: type };
+  }
+
+  function _buildPeriodes(type, anneeRaw, persoRaw) {
+    if (type === "annee") {
+      return anneeRaw.split(";").map(function(s){return s.trim();}).filter(Boolean)
+        .map(function(a){ return { type: "annee", annee: a }; });
+    }
+    if (type === "perso-periode") {
+      return persoRaw.split(";").map(function(s){return s.trim();}).filter(Boolean)
+        .map(function(seg){
+          var parts = seg.split("/");
+          return parts.length === 2 ? { type: "perso", debut: parts[0], fin: parts[1] } : null;
+        }).filter(Boolean);
+    }
+    return [{ type: type }];
+  }
+
+  /* ── Setter ──────────────────────────────────────────────────────────── */
+  window.setParams_rapport_config = function (data) {
+    var rc = (data && data.rapport_config) ? data.rapport_config : {};
+
+    /* Puissance principale */
+    var pp = rc.puissance_principale || "souscrite";
+    var ppType = pp.startsWith("perso:") ? "perso-puissance" : pp;
+    var radio = document.querySelector('input[name="rc-pp"][value="' + ppType + '"]');
+    if (radio) { radio.checked = true; radio.dispatchEvent(new Event("change")); }
+    /* Toujours reconstruire le champ perso depuis les secondaires
+       (même si le principal n'est pas perso, les kVA perso sont en secondaires) */
+    var persoVals = (rc.puissances_secondaires || [])
+      .filter(function(p){ return p.startsWith("perso:"); })
+      .map(function(p){ return p.slice(6); });
+    var inp = document.getElementById("rc-pp-perso-val");
+    if (inp) inp.value = persoVals.join(";");
+
+    /* Puissances secondaires */
+    (rc.puissances_secondaires || []).forEach(function(p) {
+      var nom = p.startsWith("perso:") ? "perso-puissance" : p;
+      var chk = document.querySelector('[data-rc-sec="' + nom + '"]');
+      if (chk && !chk.checked) { chk.checked = true; chk.dispatchEvent(new Event("change")); }
+    });
+
+    /* Période principale */
+    var peri = rc.periode_principale || { type: "glissante_1an" };
+    var periType = (peri.type === "perso") ? "perso-periode" : peri.type;
+    var radioP = document.querySelector('input[name="rc-periop"][value="' + periType + '"]');
+    if (radioP) { radioP.checked = true; radioP.dispatchEvent(new Event("change")); }
+    if (peri.type === "annee") {
+      var ia = document.getElementById("rc-periop-annee-val");
+      if (ia) ia.value = peri.annee || "";
+    }
+    if (peri.type === "perso") {
+      var ip = document.getElementById("rc-periop-perso-val");
+      if (ip) ip.value = (peri.debut || "") + "/" + (peri.fin || "");
+    }
+
+    /* Périodes secondaires */
+    var annees = [], persos = [];
+    (rc.periodes_secondaires || []).forEach(function(p) {
+      var nom;
+      if (p.type === "perso") { nom = "perso-periode"; persos.push((p.debut||"") + "/" + (p.fin||"")); }
+      else if (p.type === "annee") { nom = "annee"; annees.push(p.annee || ""); }
+      else nom = p.type;
+      var chk = document.querySelector('[data-rc-sec="' + nom + '"]');
+      if (chk && !chk.checked) { chk.checked = true; chk.dispatchEvent(new Event("change")); }
+    });
+    if (annees.length) {
+      var av = document.getElementById("rc-periop-annee-val");
+      if (av && !av.value) av.value = annees.join(";");
+    }
+    if (persos.length) {
+      var pv = document.getElementById("rc-periop-perso-val");
+      if (pv && !pv.value) pv.value = persos.join(";");
+    }
+
+    _majSurlignes("rc-pp",     "rc-ps-");
+    _majSurlignes("rc-periop", "rc-perios-");
+  };
+
+})();
+</script>

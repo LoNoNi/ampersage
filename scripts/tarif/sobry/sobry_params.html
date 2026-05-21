@@ -1,0 +1,108 @@
+<div class="gen-params-outer">
+  <div class="gen-params-bandeau">
+    <span class="gen-pb-fournisseur">{fournisseur}</span>
+    <span class="gen-pb-offre">{offre}</span>
+    <span class="gen-pb-type">custom</span>
+  </div>
+  <div class="gen-params-offres">
+    <div class="gen-params-inner gen-params-inner-sobry" data-offre-id="{offre_id}">
+      <table class="gen-pi-table">
+        <thead>
+          <tr>
+            <th class="gen-pi-th">Paramètre</th>
+            <th class="gen-pi-th">Valeur</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="gen-pi-td gen-pi-label">TURPE</td>
+            <td class="gen-pi-td">
+              <label class="gen-pi-radio-label">
+                <input type="radio" name="sobry-turpe" value="CU4" {checked_cu4}> CU4
+              </label>
+              <label class="gen-pi-radio-label" style="margin-left:1rem">
+                <input type="radio" name="sobry-turpe" value="MU4" {checked_mu4}> MU4
+              </label>
+            </td>
+          </tr>
+          <tr>
+            <td class="gen-pi-td gen-pi-label">Mode prix</td>
+            <td class="gen-pi-td">{display}</td>
+          </tr>
+          <tr>
+            <td class="gen-pi-td gen-pi-label">Marge ({display})</td>
+            <td class="gen-pi-td">{marge} €/kWh</td>
+          </tr>
+        </tbody>
+      </table>
+      <table class="gen-pi-table">
+        <thead>
+          <tr>
+            <th class="gen-pi-th">Plafond {produit_label}</th>
+            <th class="gen-pi-th">HT (€/kWh)</th>
+            <th class="gen-pi-th">TTC (€/kWh)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="gen-pi-td gen-pi-label">Été</td>
+            <td class="gen-pi-td">{plafond_ete_ht}</td>
+            <td class="gen-pi-td">{plafond_ete_ttc}</td>
+          </tr>
+          <tr>
+            <td class="gen-pi-td gen-pi-label">Hiver</td>
+            <td class="gen-pi-td">{plafond_hiver_ht}</td>
+            <td class="gen-pi-td">{plafond_hiver_ttc}</td>
+          </tr>
+          <tr>
+            <td class="gen-pi-td gen-pi-label">Prime couverture</td>
+            <td class="gen-pi-td">{prime_ht}</td>
+            <td class="gen-pi-td">{prime_ttc}</td>
+          </tr>
+        </tbody>
+      </table>
+      <table class="gen-pi-table">
+        <thead>
+          <tr>
+            <th class="gen-pi-th">Puissance</th>
+            <th class="gen-pi-th">Abonnement HT</th>
+            <th class="gen-pi-th">Abonnement TTC</th>
+          </tr>
+        </thead>
+        <tbody id="sobry-tbody-cu4" style="{style_cu4}">
+          {lignes_tranches_cu4}
+        </tbody>
+        <tbody id="sobry-tbody-mu4" style="{style_mu4}">
+          {lignes_tranches_mu4}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<script>
+(function() {
+  function _switchTurpe(v) {
+    var cu4 = document.getElementById('sobry-tbody-cu4');
+    var mu4 = document.getElementById('sobry-tbody-mu4');
+    if (cu4) cu4.style.display = v === 'CU4' ? '' : 'none';
+    if (mu4) mu4.style.display = v === 'MU4' ? '' : 'none';
+  }
+
+  document.querySelectorAll('input[name="sobry-turpe"]').forEach(function(r) {
+    r.addEventListener('change', function() { _switchTurpe(this.value); });
+  });
+
+  window.getParams_sobry = function() {
+    var r = document.querySelector('input[name="sobry-turpe"]:checked');
+    return { turpe_actifs: [r ? r.value : 'CU4'] };
+  };
+
+  window.setParams_sobry = function(params) {
+    var v = ((params || {}).turpe_actifs || ['CU4'])[0];
+    document.querySelectorAll('input[name="sobry-turpe"]').forEach(function(r) {
+      r.checked = (r.value === v);
+    });
+    _switchTurpe(v);
+  };
+})();
+</script>
